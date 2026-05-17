@@ -289,8 +289,10 @@ export const useStore = create(
   )
 );
 
-// Check localStorage size after each update
-useStore.subscribe(() => {
+import { debouncedSave } from "../lib/cloudSync";
+
+// Check localStorage size + trigger cloud sync on every state change
+useStore.subscribe((state) => {
   try {
     const data = localStorage.getItem("treinta-dias-store");
     if (data && data.length > 4_000_000) {
@@ -299,4 +301,8 @@ useStore.subscribe(() => {
       );
     }
   } catch (_) {}
+
+  // Sync to Supabase (debounced 2s, no-op if CLOUD_ENABLED is false)
+  const { monthStart, dayNumber, ups, specialDays, replanDays, projects, days, currentDay } = state;
+  debouncedSave({ monthStart, dayNumber, ups, specialDays, replanDays, projects, days, currentDay });
 });
