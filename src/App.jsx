@@ -16,6 +16,7 @@ import EvidenceMode from "./components/screens/EvidenceMode";
 import DayClose from "./components/screens/DayClose";
 import History from "./components/screens/History";
 import FinalSummary from "./components/screens/FinalSummary";
+import ResetLocked from "./components/screens/ResetLocked";
 
 export default function App() {
   const phase = useStore((s) => s.currentDay.phase);
@@ -26,10 +27,25 @@ export default function App() {
   const declineUps = useStore((s) => s.declineUps);
 
   const [syncing, setSyncing] = useState(CLOUD_ENABLED); // show loader only if cloud is configured
+  const [resetLocked, setResetLocked] = useState(null); // timestamp when reset unlocks, or null if not locked
 
-  // On mount: try to load latest state from Supabase
+  // On mount: check for reset lock, then load state
   useEffect(() => {
     async function init() {
+      // Chequea si hay un reset pending
+      const resetUnlock = localStorage.getItem("treinta-dias-reset-unlock");
+      if (resetUnlock) {
+        const unlocksAt = parseInt(resetUnlock, 10);
+        if (Date.now() < unlocksAt) {
+          setResetLocked(unlocksAt);
+          setSyncing(false);
+          return;
+        } else {
+          // Reset time has passed, clear the flag
+          localStorage.removeItem("treinta-dias-reset-unlock");
+        }
+      }
+
       if (CLOUD_ENABLED) {
         const cloud = await loadFromCloud();
         if (cloud?.data) {
@@ -54,6 +70,16 @@ export default function App() {
   // After initDay sets phase to "init", decide screen
   useEffect(() => {
     if (phase !== "init" || syncing) return;
+
+    const state = useStore.getState();
+    const isDay1 = state.dayNumber === 1 && Object.keys(state.days).length === 0;
+
+    if (isDay1) {
+      markEnteredOnTime(true);
+      setPhase("yesterday");
+      return;
+    }
+
     const late = isLate();
     markEnteredOnTime(!late);
     if (!late) {
@@ -64,6 +90,10 @@ export default function App() {
       declineUps();
     }
   }, [phase, syncing]);
+
+  if (resetLocked) {
+    return <ResetLocked unlocksAt={resetLocked} />;
+  }
 
   if (syncing) {
     return (

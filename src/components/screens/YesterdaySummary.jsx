@@ -14,21 +14,72 @@ export default function YesterdaySummary() {
   const yesterday = yesterdayKey ? days[yesterdayKey] : null;
 
   if (isFirstDay || !yesterday) {
+    const todayLabel = new Date().toLocaleDateString("es-AR", {
+      weekday: "long",
+      day: "numeric",
+      month: "long",
+    });
+
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center px-6 text-center">
-        <div className="text-6xl mb-5">🚀</div>
-        <h1 className="text-4xl font-black mb-3 tracking-tight">30 Días</h1>
-        <p className="text-gray-400 mb-2 text-lg">Hoy empieza el reto.</p>
-        <p className="text-gray-600 text-sm mb-10 max-w-sm leading-relaxed">
-          30 días de datos objetivos para tomar la decisión más importante de este año.
-          Meta: ≥2100 puntos y ≥80% de cumplimiento de hábitos.
-        </p>
-        <button
-          onClick={() => setPhase("planner")}
-          className="bg-white text-black font-black py-4 px-10 rounded-xl text-xl active:scale-95 transition-transform"
-        >
-          PLANIFICAR HOY →
-        </button>
+      <div className="min-h-screen flex flex-col px-6 pt-12 pb-8 max-w-lg mx-auto">
+        {/* Header */}
+        <div className="mb-8">
+          <p className="text-gray-600 text-xs uppercase tracking-widest capitalize mb-4">
+            {todayLabel}
+          </p>
+          <div className="flex items-end gap-3 mb-4">
+            <span className="text-8xl font-black leading-none text-white">1</span>
+            <div className="mb-2">
+              <span className="text-gray-500 text-lg">de 30</span>
+            </div>
+          </div>
+          <h2 className="text-2xl font-black text-white leading-tight mb-2">
+            Empieza hoy.
+          </h2>
+          <p className="text-gray-500 text-sm leading-relaxed max-w-xs">
+            30 días de datos reales para tomar la decisión más importante de este año.
+          </p>
+        </div>
+
+        {/* Divider */}
+        <div className="border-t border-[#1a1a1a] mb-8" />
+
+        {/* Minimums */}
+        <div className="mb-8">
+          <p className="text-gray-600 text-xs uppercase tracking-widest mb-4">
+            Mínimos obligatorios cada día
+          </p>
+          <div className="grid grid-cols-2 gap-3">
+            {[
+              { label: "Negocio", min: "5h", color: "text-blue-400" },
+              { label: "Estudio", min: "3h", color: "text-purple-400" },
+              { label: "Segunda empresa", min: "1h", color: "text-green-400" },
+              { label: "Ejercicio", min: "30min", color: "text-orange-400" },
+            ].map((item) => (
+              <div key={item.label} className="bg-[#111111] rounded-xl p-3">
+                <p className={`text-lg font-black ${item.color}`}>{item.min}</p>
+                <p className="text-gray-500 text-xs mt-0.5">{item.label}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Meta */}
+        <div className="bg-[#0f0f0f] border border-[#1e1e1e] rounded-2xl p-4 mb-8">
+          <p className="text-gray-600 text-xs uppercase tracking-widest mb-2">Meta</p>
+          <p className="text-gray-300 text-sm leading-relaxed">
+            ≥2100 puntos totales · ≥80% cumplimiento de hábitos
+          </p>
+        </div>
+
+        <div className="mt-auto">
+          <button
+            onClick={() => setPhase("planner")}
+            className="w-full bg-white text-black font-black py-4 rounded-xl text-lg active:scale-95 transition-transform"
+          >
+            PLANIFICAR DÍA 1 →
+          </button>
+        </div>
       </div>
     );
   }

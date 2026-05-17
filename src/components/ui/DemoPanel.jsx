@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useStore } from "../../store/useStore";
+import { saveToCloud } from "../../lib/cloudSync";
 
 const PHASES = [
   { id: "yesterday", label: "Resumen ayer" },
@@ -132,9 +133,25 @@ export default function DemoPanel() {
     }));
   }
 
-  function resetAll() {
-    if (!confirm("¿Resetear todo el estado? Se borrará todo el progreso.")) return;
+  async function resetAll() {
+    if (!confirm("¿Resetear todo el estado? Se borrará todo el progreso y empezará desde cero.")) return;
+
+    // Borra localStorage (incluyendo cualquier bloqueo previo)
     localStorage.removeItem("treinta-dias-store");
+    localStorage.removeItem("treinta-dias-reset-unlock");
+
+    // Borra Supabase
+    await saveToCloud({
+      monthStart: null,
+      dayNumber: 1,
+      ups: { total: 1, used: false },
+      specialDays: { total: 4, usedDays: [] },
+      replanDays: { total: 5, usedDays: [] },
+      projects: [],
+      days: {},
+      currentDay: {},
+    });
+
     window.location.reload();
   }
 
