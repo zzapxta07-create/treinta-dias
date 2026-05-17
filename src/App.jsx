@@ -5,7 +5,6 @@ import { loadFromCloud } from "./lib/cloudSync";
 import { CLOUD_ENABLED } from "./lib/supabase";
 
 import Header from "./components/ui/Header";
-import DemoPanel from "./components/ui/DemoPanel";
 import UpsPrompt from "./components/screens/UpsPrompt";
 import DayLost from "./components/screens/DayLost";
 import YesterdaySummary from "./components/screens/YesterdaySummary";
@@ -130,7 +129,6 @@ export default function App() {
     <div className="min-h-screen bg-[#0a0a0a] text-gray-100">
       {!hideHeader && <Header />}
       <div className={!hideHeader ? "pt-14" : ""}>{SCREENS[phase] || SCREENS.init}</div>
-      <DemoPanel />
     </div>
   );
 }
