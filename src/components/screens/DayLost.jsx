@@ -4,7 +4,13 @@ import { calcTotalScore } from "../../utils/scoring";
 export default function DayLost() {
   const days = useStore((s) => s.days);
   const dayNumber = useStore((s) => s.dayNumber);
+  const recoverDay = useStore((s) => s.recoverDay);
   const totalScore = calcTotalScore(days);
+
+  function handleRecover() {
+    if (!confirm("¿Recuperar el día y continuar? Se quitará la penalización de este día.")) return;
+    recoverDay();
+  }
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-[#0a0a0a] px-6 text-center">
@@ -20,10 +26,16 @@ export default function DayLost() {
           <p className="text-gray-300 text-xl font-bold">{Math.max(0, totalScore)} pts</p>
         </div>
       </div>
-      <p className="text-gray-600 text-sm max-w-sm leading-relaxed">
+      <p className="text-gray-600 text-sm max-w-sm leading-relaxed mb-8">
         No podés registrar nada hoy. El día queda marcado en rojo en tu
         calendario. Mañana a partir de las 7am podés volver a empezar.
       </p>
+      <button
+        onClick={handleRecover}
+        className="text-gray-600 text-xs underline hover:text-gray-400 transition-colors"
+      >
+        Recuperar día (error de timer)
+      </button>
     </div>
   );
 }

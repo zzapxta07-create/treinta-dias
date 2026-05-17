@@ -145,7 +145,7 @@ export const useStore = create(
       },
 
       confirmPlanning() {
-        const deadline = Date.now() + 20 * 60 * 1000;
+        const deadline = Date.now() + 30 * 60 * 1000;
         set((s) => ({
           currentDay: {
             ...s.currentDay,
@@ -270,6 +270,25 @@ export const useStore = create(
             emotionalState,
           },
         }));
+      },
+
+      // ── Recovery ───────────────────────────────────────────
+      recoverDay() {
+        const dateKey = get().currentDay.dateKey;
+        set((s) => {
+          const days = { ...s.days };
+          delete days[dateKey];
+          const hasBlocks = s.currentDay.blocks?.length > 0;
+          return {
+            days,
+            currentDay: {
+              ...s.currentDay,
+              phase: hasBlocks ? "dashboard" : "planner",
+              showerComplete: true,
+              showerTimer: null,
+            },
+          };
+        });
       },
 
       // ── Projects ───────────────────────────────────────────
