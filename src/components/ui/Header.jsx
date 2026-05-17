@@ -1,4 +1,6 @@
+import { useState } from "react";
 import { useStore } from "../../store/useStore";
+import { saveToCloud } from "../../lib/cloudSync";
 
 export default function Header() {
   const dayNumber = useStore((s) => s.dayNumber);
@@ -7,6 +9,23 @@ export default function Header() {
   const replanDays = useStore((s) => s.replanDays);
   const setPhase = useStore((s) => s.setPhase);
   const phase = useStore((s) => s.currentDay.phase);
+
+  const [showSettings, setShowSettings] = useState(false);
+
+  async function handleReset() {
+    if (!confirm("¿Resetear todo? Se borrará todo el progreso y empezará desde cero.")) return;
+    setShowSettings(false);
+    localStorage.removeItem("treinta-dias-store");
+    localStorage.removeItem("treinta-dias-reset-unlock");
+    await saveToCloud({
+      monthStart: null, dayNumber: 1,
+      ups: { total: 1, used: false },
+      specialDays: { total: 4, usedDays: [] },
+      replanDays: { total: 5, usedDays: [] },
+      projects: [], days: {}, currentDay: {},
+    });
+    window.location.reload();
+  }
 
   const specialLeft = specialDays.total - specialDays.usedDays.length;
   const replanLeft = replanDays.total - replanDays.usedDays.length;
@@ -20,7 +39,7 @@ export default function Header() {
         <span className="text-gray-500 text-xs">Esp: {specialLeft}/4</span>
         <span className="text-gray-500 text-xs">Rep: {replanLeft}/5</span>
       </div>
-      <div className="flex gap-2">
+      <div className="flex gap-2 items-center">
         {phase === "dashboard" && (
           <button
             onClick={() => setPhase("history")}
@@ -45,6 +64,27 @@ export default function Header() {
             Cerrar día
           </button>
         )}
+
+        {/* Settings gear */}
+        <div className="relative">
+          <button
+            onClick={() => setShowSettings((v) => !v)}
+            className="text-gray-700 hover:text-gray-400 text-base px-1 py-1 transition-colors"
+            title="Ajustes"
+          >
+            ⚙
+          </button>
+          {showSettings && (
+            <div className="absolute right-0 top-8 bg-[#1a1a1a] border border-[#333333] rounded-xl p-3 w-44 shadow-xl z-[200]">
+              <button
+                onClick={handleReset}
+                className="w-full text-left text-xs text-red-400 hover:text-red-300 py-2 px-2 rounded-lg hover:bg-[#2a1010] transition-colors"
+              >
+                Resetear todo
+              </button>
+            </div>
+          )}
+        </div>
       </div>
     </header>
   );

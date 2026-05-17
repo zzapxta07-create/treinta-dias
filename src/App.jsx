@@ -48,14 +48,21 @@ export default function App() {
       if (CLOUD_ENABLED) {
         const cloud = await loadFromCloud();
         if (cloud?.data) {
-          // Merge cloud state into store — cloud wins over localStorage
-          const localUpdated = JSON.parse(
-            localStorage.getItem("treinta-dias-store") || "{}"
-          )?.state?.currentDay?.dateKey;
           const cloudDate = cloud.data.currentDay?.dateKey;
-          // Only apply cloud state if it has data
           if (cloudDate || cloud.data.monthStart) {
-            useStore.setState(cloud.data);
+            let data = cloud.data;
+            // If shower timer already expired on another device, give fresh 20 min
+            const timer = data.currentDay?.showerTimer;
+            if (timer && timer.deadline < Date.now() && !data.currentDay?.showerComplete) {
+              data = {
+                ...data,
+                currentDay: {
+                  ...data.currentDay,
+                  showerTimer: { deadline: Date.now() + 20 * 60 * 1000 },
+                },
+              };
+            }
+            useStore.setState(data);
           }
         }
       }
