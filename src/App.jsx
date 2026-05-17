@@ -46,24 +46,30 @@ export default function App() {
       }
 
       if (CLOUD_ENABLED) {
-        const cloud = await loadFromCloud();
-        if (cloud?.data) {
-          const cloudDate = cloud.data.currentDay?.dateKey;
-          if (cloudDate || cloud.data.monthStart) {
-            let data = cloud.data;
-            // If shower timer already expired on another device, give fresh 20 min
-            const timer = data.currentDay?.showerTimer;
-            if (timer && timer.deadline < Date.now() && !data.currentDay?.showerComplete) {
-              data = {
-                ...data,
-                currentDay: {
-                  ...data.currentDay,
-                  showerTimer: { deadline: Date.now() + 20 * 60 * 1000 },
-                },
-              };
+        try {
+          const cloud = await Promise.race([
+            loadFromCloud(),
+            new Promise((_, reject) => setTimeout(() => reject(new Error("timeout")), 5000)),
+          ]);
+          if (cloud?.data) {
+            const cloudDate = cloud.data.currentDay?.dateKey;
+            if (cloudDate || cloud.data.monthStart) {
+              let data = cloud.data;
+              const timer = data.currentDay?.showerTimer;
+              if (timer && timer.deadline < Date.now() && !data.currentDay?.showerComplete) {
+                data = {
+                  ...data,
+                  currentDay: {
+                    ...data.currentDay,
+                    showerTimer: { deadline: Date.now() + 20 * 60 * 1000 },
+                  },
+                };
+              }
+              useStore.setState(data);
             }
-            useStore.setState(data);
           }
+        } catch {
+          // Supabase unavailable or timed out — use localStorage fallback
         }
       }
       setSyncing(false);
