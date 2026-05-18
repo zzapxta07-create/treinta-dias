@@ -25,7 +25,7 @@ export default function Dashboard() {
     const currentMinutes = now.getHours() * 60 + now.getMinutes();
     const elapsed = currentMinutes - activeBlock.startMinutes;
 
-    if (elapsed > 0 && elapsed % 30 === 0 && now.getSeconds() < 2) {
+    if (elapsed > 0 && elapsed % 30 === 0) {
       const slotIndex = Math.floor(elapsed / 30);
       const alreadyDone = currentDay.evidences.some(
         (e) => e.blockId === activeBlock.id && e.slotIndex === slotIndex
