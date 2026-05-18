@@ -17,24 +17,30 @@ export default function Dashboard() {
   const projects = useStore((s) => s.projects);
   const startEvidenceTimer = useStore((s) => s.startEvidenceTimer);
 
-  // Auto-trigger evidence mode every 30min inside a non-OTROS block
+  // Auto-trigger evidence: fire on exact :30 marks AND catch missed slots on enter
   useEffect(() => {
     if (!activeBlock || activeBlock.area === "OTROS") return;
     if (currentDay.phase !== "dashboard") return;
 
     const currentMinutes = now.getHours() * 60 + now.getMinutes();
     const elapsed = currentMinutes - activeBlock.startMinutes;
+    if (elapsed <= 0) return;
 
-    if (elapsed > 0 && elapsed % 30 === 0) {
-      const slotIndex = Math.floor(elapsed / 30);
+    // Find the latest slot that should have been triggered by now
+    const latestSlot = Math.floor(elapsed / 30);
+    if (latestSlot < 1) return;
+
+    // Trigger the first pending slot (in order)
+    for (let slot = 1; slot <= latestSlot; slot++) {
       const alreadyDone = currentDay.evidences.some(
-        (e) => e.blockId === activeBlock.id && e.slotIndex === slotIndex
+        (e) => e.blockId === activeBlock.id && e.slotIndex === slot
       );
       if (!alreadyDone) {
-        startEvidenceTimer(activeBlock.id, slotIndex);
+        startEvidenceTimer(activeBlock.id, slot);
+        return;
       }
     }
-  }, [now.getMinutes()]);
+  }, [now.getMinutes(), activeBlock?.id]);
 
   const areaMins = areaMinutesFromBlocks(currentDay.blocks || []);
   const dayScore = calcDayScore({ ...currentDay, status: "partial" });
