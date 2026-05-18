@@ -96,10 +96,9 @@ export default function App() {
     markEnteredOnTime(!late);
     if (!late) {
       setPhase("yesterday");
-    } else if (!ups.used && ups.total > 0) {
-      setPhase("ups_prompt");
     } else {
-      declineUps();
+      // Always show ups_prompt when late — never auto-lose the day
+      setPhase("ups_prompt");
     }
   }, [phase, syncing]);
 
