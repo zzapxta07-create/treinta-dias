@@ -263,7 +263,7 @@ export const useStore = create(
           },
           currentDay: {
             ...s.currentDay,
-            phase: "dashboard",
+            phase: "day_complete",
             closeComplete: true,
             closePhoto: photo,
             closeTime: Date.now(),
@@ -330,7 +330,7 @@ function extractSyncState(state) {
 }
 
 // Critical phases that require immediate save (no debounce)
-const IMMEDIATE_PHASES = new Set(["dashboard", "close", "day_lost", "final"]);
+const IMMEDIATE_PHASES = new Set(["dashboard", "close", "day_complete", "day_lost", "final"]);
 let prevPhase = null;
 
 useStore.subscribe((state) => {

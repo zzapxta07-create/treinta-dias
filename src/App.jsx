@@ -13,6 +13,7 @@ import ShowerMode from "./components/screens/ShowerMode";
 import Dashboard from "./components/screens/Dashboard";
 import EvidenceMode from "./components/screens/EvidenceMode";
 import DayClose from "./components/screens/DayClose";
+import DayComplete from "./components/screens/DayComplete";
 import History from "./components/screens/History";
 import FinalSummary from "./components/screens/FinalSummary";
 import ResetLocked from "./components/screens/ResetLocked";
@@ -43,7 +44,12 @@ export default function App() {
       if (local.currentDay?.evidenceTimer || local.currentDay?.showerTimer) return;
 
       lastSyncedAt = cloud.updated_at;
-      useStore.setState(cloud.data);
+      let syncData = cloud.data;
+      // Fix stale cloud state: dashboard + closeComplete should be day_complete
+      if (syncData.currentDay?.phase === "dashboard" && syncData.currentDay?.closeComplete) {
+        syncData = { ...syncData, currentDay: { ...syncData.currentDay, phase: "day_complete" } };
+      }
+      useStore.setState(syncData);
     }
 
     const interval = setInterval(syncFromCloud, 15_000);
@@ -95,6 +101,10 @@ export default function App() {
                     showerTimer: { deadline: Date.now() + 20 * 60 * 1000 },
                   },
                 };
+              }
+              // Fix stale state: dashboard + closeComplete → day_complete
+              if (data.currentDay?.phase === "dashboard" && data.currentDay?.closeComplete) {
+                data = { ...data, currentDay: { ...data.currentDay, phase: "day_complete" } };
               }
               useStore.setState(data);
             }
@@ -162,11 +172,12 @@ export default function App() {
     dashboard: <Dashboard />,
     evidence: <EvidenceMode />,
     close: <DayClose />,
+    day_complete: <DayComplete />,
     history: <History />,
     final: <FinalSummary />,
   };
 
-  const hideHeader = ["shower", "evidence", "day_lost", "ups_prompt", "init"].includes(phase);
+  const hideHeader = ["shower", "evidence", "day_lost", "ups_prompt", "init", "day_complete"].includes(phase);
 
   return (
     <div className="min-h-screen bg-[#0a0a0a] text-gray-100">
