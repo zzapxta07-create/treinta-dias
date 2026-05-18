@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useStore } from "../../store/useStore";
 import { saveToCloud } from "../../lib/cloudSync";
+import { appDayKey } from "../../utils/dateUtils";
 
 export default function Header() {
   const dayNumber = useStore((s) => s.dayNumber);
@@ -11,6 +12,13 @@ export default function Header() {
   const phase = useStore((s) => s.currentDay.phase);
 
   const [showSettings, setShowSettings] = useState(false);
+  const setTodayAsDay1 = useStore((s) => s.setTodayAsDay1);
+
+  function handleFixDay1() {
+    if (!confirm("¿Fijar HOY como Día 1? Se corrige el número de día sin borrar tus bloques.")) return;
+    setShowSettings(false);
+    setTodayAsDay1(appDayKey());
+  }
 
   async function handleReset() {
     if (!confirm("¿Resetear todo? Se borrará todo el progreso y empezará desde cero.")) return;
@@ -76,6 +84,12 @@ export default function Header() {
           </button>
           {showSettings && (
             <div className="absolute right-0 top-8 bg-[#1a1a1a] border border-[#333333] rounded-xl p-3 w-44 shadow-xl z-[200]">
+              <button
+                onClick={handleFixDay1}
+                className="w-full text-left text-xs text-yellow-400 hover:text-yellow-300 py-2 px-2 rounded-lg hover:bg-[#2a2000] transition-colors"
+              >
+                Fijar hoy como Día 1
+              </button>
               <button
                 onClick={handleReset}
                 className="w-full text-left text-xs text-red-400 hover:text-red-300 py-2 px-2 rounded-lg hover:bg-[#2a1010] transition-colors"

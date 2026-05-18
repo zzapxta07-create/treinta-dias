@@ -272,6 +272,20 @@ export const useStore = create(
         }));
       },
 
+      // ── Fix month start ────────────────────────────────────
+      setTodayAsDay1(dateKey) {
+        set((s) => ({
+          monthStart: dateKey,
+          dayNumber: 1,
+          days: {},
+          currentDay: {
+            ...s.currentDay,
+            dateKey,
+            phase: s.currentDay.blocks?.length > 0 ? s.currentDay.phase : "yesterday",
+          },
+        }));
+      },
+
       // ── Recovery ───────────────────────────────────────────
       recoverDay() {
         const dateKey = get().currentDay.dateKey;
