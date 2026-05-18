@@ -20,10 +20,18 @@ export default function EvidenceMode() {
 
   if (!evidenceTimer) return null;
 
+  const setPhase = useStore((s) => s.setPhase);
+
   const block = blocks.find((b) => b.id === evidenceTimer.blockId);
   const blockLabel = block
     ? `${block.startTime}–${block.endTime} · ${AREAS[block.area]?.label}`
     : "";
+
+  function handleSkip() {
+    useStore.setState((s) => ({
+      currentDay: { ...s.currentDay, phase: "dashboard", evidenceTimer: null },
+    }));
+  }
 
   function handleExpire() {
     if (expired) return;
@@ -184,6 +192,12 @@ export default function EvidenceMode() {
           className="w-full bg-[#1a1a1a] text-red-400 font-medium py-3 rounded-xl text-sm active:scale-95 transition-transform"
         >
           NO HICE NADA
+        </button>
+        <button
+          onClick={handleSkip}
+          className="text-gray-700 text-xs underline hover:text-gray-500 text-center transition-colors"
+        >
+          Ya registré desde otro dispositivo — volver al dashboard
         </button>
       </div>
     </div>
