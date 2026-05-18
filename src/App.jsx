@@ -37,6 +37,11 @@ export default function App() {
       const cloud = await loadFromCloud().catch(() => null);
       if (!cloud?.data || !cloud.updated_at) return;
       if (lastSyncedAt && cloud.updated_at <= lastSyncedAt) return;
+
+      // Don't overwrite if this device has an active timer
+      const local = useStore.getState();
+      if (local.currentDay?.evidenceTimer || local.currentDay?.showerTimer) return;
+
       lastSyncedAt = cloud.updated_at;
       useStore.setState(cloud.data);
     }
