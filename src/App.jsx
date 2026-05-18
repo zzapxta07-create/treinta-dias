@@ -28,6 +28,20 @@ export default function App() {
   const [syncing, setSyncing] = useState(CLOUD_ENABLED); // show loader only if cloud is configured
   const [resetLocked, setResetLocked] = useState(null); // timestamp when reset unlocks, or null if not locked
 
+  // Periodic sync: pull from Supabase every 30s to stay in sync across devices
+  useEffect(() => {
+    if (!CLOUD_ENABLED) return;
+    let lastSyncedAt = null;
+    const interval = setInterval(async () => {
+      const cloud = await loadFromCloud().catch(() => null);
+      if (!cloud?.data || !cloud.updated_at) return;
+      if (lastSyncedAt && cloud.updated_at <= lastSyncedAt) return;
+      lastSyncedAt = cloud.updated_at;
+      useStore.setState(cloud.data);
+    }, 30_000);
+    return () => clearInterval(interval);
+  }, []);
+
   // On mount: check for reset lock, then load state
   useEffect(() => {
     async function init() {
