@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useStore } from "./store/useStore";
 import { appDayKey, isLate } from "./utils/dateUtils";
 import { loadFromCloud } from "./lib/cloudSync";
@@ -26,26 +26,30 @@ export default function App() {
   const markEnteredOnTime = useStore((s) => s.markEnteredOnTime);
   const declineUps = useStore((s) => s.declineUps);
 
-  const [syncing, setSyncing] = useState(CLOUD_ENABLED); // show loader only if cloud is configured
-  const [resetLocked, setResetLocked] = useState(null); // timestamp when reset unlocks, or null if not locked
+  const [syncing, setSyncing] = useState(CLOUD_ENABLED);
+  const [resetLocked, setResetLocked] = useState(null);
+  const lastSyncedAtRef = useRef(null);
 
   // Cross-device sync: poll every 15s + sync immediately when tab regains focus
   useEffect(() => {
     if (!CLOUD_ENABLED) return;
-    let lastSyncedAt = null;
 
     async function syncFromCloud() {
       const cloud = await loadFromCloud().catch(() => null);
       if (!cloud?.data || !cloud.updated_at) return;
-      if (lastSyncedAt && cloud.updated_at <= lastSyncedAt) return;
+      if (lastSyncedAtRef.current && cloud.updated_at <= lastSyncedAtRef.current) return;
 
       // Don't overwrite if this device has an active timer
       const local = useStore.getState();
       if (local.currentDay?.evidenceTimer || local.currentDay?.showerTimer) return;
 
-      lastSyncedAt = cloud.updated_at;
+      // Don't regress to an older day
+      const localDate = local.currentDay?.dateKey;
+      const cloudDate = cloud.data.currentDay?.dateKey;
+      if (localDate && cloudDate && cloudDate < localDate) return;
+
+      lastSyncedAtRef.current = cloud.updated_at;
       let syncData = cloud.data;
-      // Fix stale cloud state: dashboard + closeComplete should be day_complete
       if (syncData.currentDay?.phase === "dashboard" && syncData.currentDay?.closeComplete) {
         syncData = { ...syncData, currentDay: { ...syncData.currentDay, phase: "day_complete" } };
       }
@@ -107,6 +111,8 @@ export default function App() {
                 data = { ...data, currentDay: { ...data.currentDay, phase: "day_complete" } };
               }
               useStore.setState(data);
+              // Mark this as the last synced timestamp so periodic sync doesn't re-apply
+              if (cloud.updated_at) lastSyncedAtRef.current = cloud.updated_at;
             }
           }
         } catch {
