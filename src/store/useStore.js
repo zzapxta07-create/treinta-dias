@@ -50,11 +50,15 @@ export const useStore = create(
       // ── Init / Day transition ──────────────────────────────
       initDay(dateKey) {
         const state = get();
-        if (
-          state.currentDay.dateKey === dateKey &&
-          state.currentDay.phase !== "init"
-        )
-          return;
+        const { phase, closeComplete } = state.currentDay;
+        const sameDay = state.currentDay.dateKey === dateKey;
+        // Skip only if same day AND in a real in-progress state
+        const skip =
+          sameDay &&
+          phase !== "init" &&
+          phase !== "day_complete" &&
+          !(phase === "close" && closeComplete);
+        if (skip) return;
 
         const isFirst = !state.monthStart;
         const monthStart = isFirst ? dateKey : state.monthStart;

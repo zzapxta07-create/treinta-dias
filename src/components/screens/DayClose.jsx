@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useStore } from "../../store/useStore";
+import { appDayKey } from "../../utils/dateUtils";
 import PhotoUpload from "../ui/PhotoUpload";
 
 const EMOTION_LABELS = {
@@ -18,6 +19,16 @@ const EMOTION_LABELS = {
 export default function DayClose() {
   const projects = useStore((s) => s.projects);
   const closeDay = useStore((s) => s.closeDay);
+  const storedDateKey = useStore((s) => s.currentDay.dateKey);
+  const initDay = useStore((s) => s.initDay);
+
+  // If showing close screen for a past day, force-init today
+  useEffect(() => {
+    const today = appDayKey();
+    if (storedDateKey && storedDateKey < today) {
+      initDay(today);
+    }
+  }, [storedDateKey]);
 
   const [photo, setPhoto] = useState(null);
   const [emotionalState, setEmotionalState] = useState(5);
