@@ -28,18 +28,30 @@ export default function App() {
   const [syncing, setSyncing] = useState(CLOUD_ENABLED); // show loader only if cloud is configured
   const [resetLocked, setResetLocked] = useState(null); // timestamp when reset unlocks, or null if not locked
 
-  // Periodic sync: pull from Supabase every 30s to stay in sync across devices
+  // Cross-device sync: poll every 15s + sync immediately when tab regains focus
   useEffect(() => {
     if (!CLOUD_ENABLED) return;
     let lastSyncedAt = null;
-    const interval = setInterval(async () => {
+
+    async function syncFromCloud() {
       const cloud = await loadFromCloud().catch(() => null);
       if (!cloud?.data || !cloud.updated_at) return;
       if (lastSyncedAt && cloud.updated_at <= lastSyncedAt) return;
       lastSyncedAt = cloud.updated_at;
       useStore.setState(cloud.data);
-    }, 30_000);
-    return () => clearInterval(interval);
+    }
+
+    const interval = setInterval(syncFromCloud, 15_000);
+
+    function onVisible() {
+      if (document.visibilityState === "visible") syncFromCloud();
+    }
+    document.addEventListener("visibilitychange", onVisible);
+
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener("visibilitychange", onVisible);
+    };
   }, []);
 
   // On mount: check for reset lock, then load state

@@ -322,20 +322,34 @@ export const useStore = create(
   )
 );
 
-import { debouncedSave } from "../lib/cloudSync";
+import { debouncedSave, immediateSave } from "../lib/cloudSync";
 
-// Check localStorage size + trigger cloud sync on every state change
+function extractSyncState(state) {
+  const { monthStart, dayNumber, ups, specialDays, replanDays, projects, days, currentDay } = state;
+  return { monthStart, dayNumber, ups, specialDays, replanDays, projects, days, currentDay };
+}
+
+// Critical phases that require immediate save (no debounce)
+const IMMEDIATE_PHASES = new Set(["dashboard", "close", "day_lost", "final"]);
+let prevPhase = null;
+
 useStore.subscribe((state) => {
   try {
     const data = localStorage.getItem("treinta-dias-store");
     if (data && data.length > 4_000_000) {
-      console.warn(
-        "⚠️ localStorage cerca del límite de 4MB. Considerá limpiar fotos antiguas."
-      );
+      console.warn("⚠️ localStorage cerca del límite de 4MB.");
     }
   } catch (_) {}
 
-  // Sync to Supabase (debounced 2s, no-op if CLOUD_ENABLED is false)
-  const { monthStart, dayNumber, ups, specialDays, replanDays, projects, days, currentDay } = state;
-  debouncedSave({ monthStart, dayNumber, ups, specialDays, replanDays, projects, days, currentDay });
+  const syncState = extractSyncState(state);
+  const phase = state.currentDay?.phase;
+
+  // Immediate save on critical transitions, debounced otherwise
+  if (phase !== prevPhase && IMMEDIATE_PHASES.has(phase)) {
+    prevPhase = phase;
+    immediateSave(syncState);
+  } else {
+    debouncedSave(syncState);
+  }
+  prevPhase = phase;
 });
