@@ -37,8 +37,12 @@ function TypingIndicator() {
   );
 }
 
-export default function AiChat({ initialMessage = null }) {
-  const [open,    setOpen]    = useState(!!initialMessage);
+export default function AiChat({ initialMessage = null, forceOpen = false, onOpenChange = null }) {
+  const [open,    setOpen]    = useState(!!initialMessage || forceOpen);
+
+  useEffect(() => {
+    if (forceOpen) setOpen(true);
+  }, [forceOpen]);
   const [input,   setInput]   = useState('');
   const [loading, setLoading] = useState(false);
   const [history, setHistory] = useState([
@@ -101,7 +105,7 @@ export default function AiChat({ initialMessage = null }) {
       {/* Floating button */}
       <button
         id="ai-chat-trigger"
-        onClick={() => setOpen(v => !v)}
+        onClick={() => { setOpen(v => !v); onOpenChange?.(!open); }}
         className="fixed bottom-24 right-4 md:bottom-6 md:right-6 z-50 w-[52px] h-[52px] bg-white text-black rounded-full shadow-xl flex items-center justify-center text-lg font-black active:scale-95 transition-transform hover:scale-105"
         title="Coach IA"
       >

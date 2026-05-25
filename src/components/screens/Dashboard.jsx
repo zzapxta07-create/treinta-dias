@@ -25,6 +25,7 @@ export default function Dashboard({ setNavScreen }) {
 
   const [recentDays,    setRecentDays]    = useState([]);
   const [showEvForm,    setShowEvForm]    = useState(false);
+  const [chatOpen,      setChatOpen]      = useState(false);
 
   useEffect(() => {
     api.get('/api/stats/history?days=7').then((r) => setRecentDays(r.data.data)).catch(() => {});
@@ -65,7 +66,22 @@ export default function Dashboard({ setNavScreen }) {
 
   return (
     <div className="min-h-screen px-4 py-5 max-w-7xl mx-auto">
-      <AiChat />
+      <AiChat forceOpen={chatOpen} onOpenChange={setChatOpen} />
+
+      {/* Header */}
+      <div className="flex items-center justify-between mb-4">
+        <p className="text-[#6B7280] text-xs uppercase tracking-widest">
+          {currentDay.date_key?.toString().slice(0, 10)}
+        </p>
+        <button
+          onClick={() => setChatOpen(v => !v)}
+          className="flex items-center gap-2 bg-[#101010] border border-[#2C2C2C] hover:border-white px-3 py-1.5 rounded-xl text-sm text-[#6B7280] hover:text-white transition-colors"
+        >
+          <span className="text-white font-black text-base">✦</span>
+          <span className="font-medium">Coach IA</span>
+        </button>
+      </div>
+
       {/* Phrase */}
       {currentDay.daily_phrase && (
         <p className="italic text-[#6B7280] text-sm text-center mb-5 px-4">
@@ -168,14 +184,6 @@ export default function Dashboard({ setNavScreen }) {
             </div>
           )}
 
-
-          {/* Coach IA button */}
-          <button
-            onClick={() => document.getElementById('ai-chat-trigger')?.click()}
-            className="w-full bg-[#101010] border border-[#2C2C2C] hover:border-white text-[#6B7280] hover:text-white py-3 rounded-xl text-sm font-medium transition-colors flex items-center justify-center gap-2"
-          >
-            <span className="text-white font-black">✦</span> Coach IA
-          </button>
 
           {/* Close day button */}
           <button
