@@ -9,6 +9,7 @@ import { AREAS, MANDATORY_AREAS } from '../../data/areas';
 import ScoreRing from '../ui/ScoreRing';
 import ProgressBar from '../ui/ProgressBar';
 import AreaBadge from '../ui/AreaBadge';
+import EvidenceInline from '../ui/EvidenceInline';
 import api from '../../api/index.js';
 
 const AREA_MINS = { NEGOCIO: 300, SEGUNDA: 60, ESTUDIO: 180, EJERCICIO: 30 };
@@ -17,67 +18,23 @@ export default function Dashboard({ setNavScreen }) {
   const now        = useCurrentTime();
   const currentDay = useStore((s) => s.currentDay);
   const config     = useStore((s) => s.config);
-  const startEvidenceTimer = useStore((s) => s.startEvidenceTimer);
-  const setCurrentDay      = useStore((s) => s.setCurrentDay);
+  const setCurrentDay = useStore((s) => s.setCurrentDay);
   const activeBlock = useActiveBlock();
 
   const [recentDays, setRecentDays] = useState([]);
 
-  // Load 7-day chart
   useEffect(() => {
     api.get('/api/stats/history?days=7').then((r) => setRecentDays(r.data.data)).catch(() => {});
   }, []);
-
-  // Evidence trigger: every 60 minutes per active block
-  useEffect(() => {
-    if (!activeBlock || activeBlock.area_id === 'OTROS') return;
-    if (currentDay?.phase !== 'dashboard') return;
-
-    const currentMins = now.getHours() * 60 + now.getMinutes();
-    const blockStart  = activeBlock.start_minutes ?? activeBlock.startMinutes;
-    const elapsed     = currentMins - blockStart;
-    if (elapsed <= 0) return;
-
-    const latestSlot = Math.floor(elapsed / 60);
-    if (latestSlot < 1) return;
-
-    const evidences = currentDay.evidences || [];
-    for (let slot = 1; slot <= latestSlot; slot++) {
-      const done = evidences.some(
-        (e) => e.block_id === activeBlock.id && e.slot_index === slot
-      );
-      if (!done) {
-        startEvidenceTimer(activeBlock.id, slot);
-        return;
-      }
-    }
-  }, [now.getMinutes(), activeBlock?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!currentDay) return null;
 
   const score    = calcDayScore(currentDay);
   const areaMins = areaMinutesFromBlocks(currentDay.blocks || []);
-
-  // Next blocks
   const currentMins = now.getHours() * 60 + now.getMinutes();
   const upcomingBlocks = (currentDay.blocks || [])
     .filter((b) => (b.start_minutes ?? b.startMinutes) > currentMins)
     .slice(0, 3);
-
-  // Pending evidences (missed slots)
-  const pendingSlots = [];
-  for (const b of currentDay.blocks || []) {
-    if (b.area_id === 'OTROS') continue;
-    const elapsed    = currentMins - (b.start_minutes ?? b.startMinutes);
-    if (elapsed < 60) continue;
-    const latestSlot = Math.floor(elapsed / 60);
-    for (let slot = 1; slot <= latestSlot; slot++) {
-      const done = (currentDay.evidences || []).some(
-        (e) => e.block_id === b.id && e.slot_index === slot
-      );
-      if (!done) pendingSlots.push({ block: b, slot });
-    }
-  }
 
   // Chart data
   const chartData = [...recentDays].reverse().map((d) => ({
@@ -101,6 +58,9 @@ export default function Dashboard({ setNavScreen }) {
           "{currentDay.daily_phrase}"
         </p>
       )}
+
+      {/* ── Evidence inline section ─────────────────────────────── */}
+      <EvidenceInline />
 
       <div className="flex flex-col md:flex-row gap-4">
         {/* ── Left column (40%) ──────────────────────────────────── */}
@@ -172,32 +132,6 @@ export default function Dashboard({ setNavScreen }) {
             </div>
           )}
 
-          {/* Pending evidences */}
-          {pendingSlots.length > 0 && (
-            <div className="bg-[#101010] rounded-2xl p-4 border border-yellow-500/20">
-              <p className="text-[10px] text-yellow-400 uppercase tracking-widest mb-3">
-                Evidencias pendientes
-              </p>
-              <div className="flex flex-col gap-2">
-                {pendingSlots.map(({ block, slot }, i) => (
-                  <div key={i} className="flex items-center justify-between">
-                    <div>
-                      <p className="text-white text-sm">
-                        {minutesToTime(block.start_minutes ?? block.startMinutes)} — Slot {slot}
-                      </p>
-                      <AreaBadge area={block.area_id || block.area} />
-                    </div>
-                    <button
-                      onClick={() => startEvidenceTimer(block.id, slot)}
-                      className="text-xs bg-yellow-500 text-black font-bold px-3 py-1.5 rounded-lg active:scale-95 transition-transform"
-                    >
-                      Registrar
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
 
           {/* Close day button */}
           <button

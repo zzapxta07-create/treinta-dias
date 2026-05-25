@@ -13,7 +13,6 @@ export const useStore = create(
       config: null,
 
       // ─── Client-side timers (ephemeral) ──────────────────────
-      evidenceTimer: null,  // { deadline, blockId, slotIndex }
       ritualTimer: null,    // { deadline }
 
       // ─── Actions ─────────────────────────────────────────────
@@ -22,7 +21,7 @@ export const useStore = create(
       },
 
       logout() {
-        set({ token: null, user: null, currentDay: null, config: null, evidenceTimer: null, ritualTimer: null });
+        set({ token: null, user: null, currentDay: null, config: null, ritualTimer: null });
       },
 
       setCurrentDay(day) {
@@ -31,14 +30,6 @@ export const useStore = create(
 
       setConfig(config) {
         set({ config });
-      },
-
-      startEvidenceTimer(blockId, slotIndex) {
-        set({ evidenceTimer: { deadline: Date.now() + 15 * 60 * 1000, blockId, slotIndex } });
-      },
-
-      clearEvidenceTimer() {
-        set({ evidenceTimer: null });
       },
 
       startRitualTimer() {

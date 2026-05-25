@@ -6,13 +6,11 @@ import Login         from './components/screens/Login';
 import Sidebar       from './components/ui/Sidebar';
 import BottomNav     from './components/ui/BottomNav';
 
-import UpsPrompt     from './components/screens/UpsPrompt';
 import DayLost       from './components/screens/DayLost';
 import YesterdaySummary from './components/screens/YesterdaySummary';
 import DayPlanner    from './components/screens/DayPlanner';
 import MorningRitual from './components/screens/MorningRitual';
 import Dashboard     from './components/screens/Dashboard';
-import EvidenceMode  from './components/screens/EvidenceMode';
 import DayClose      from './components/screens/DayClose';
 import DayComplete   from './components/screens/DayComplete';
 
@@ -46,7 +44,6 @@ function AppShell({ navScreen, setNavScreen, children }) {
 export default function App() {
   const token        = useStore((s) => s.token);
   const currentDay   = useStore((s) => s.currentDay);
-  const evidenceTimer = useStore((s) => s.evidenceTimer);
   const setCurrentDay = useStore((s) => s.setCurrentDay);
   const setConfig    = useStore((s) => s.setConfig);
   const logout       = useStore((s) => s.logout);
@@ -79,8 +76,7 @@ export default function App() {
   if (!token) return <Login />;
   if (loading || !currentDay) return <Spinner />;
 
-  // ─── Determine effective phase ─────────────────────────────────────────────
-  const phase = evidenceTimer ? 'evidence' : currentDay.phase;
+  const phase = currentDay.phase;
 
   // ─── Nav-screen overrides (History / Projects / Habits) ───────────────────
   const NAV_SCREENS = {
@@ -97,13 +93,11 @@ export default function App() {
   }
 
   // ─── Fullscreen phases (no shell) ─────────────────────────────────────────
-  const FULLSCREEN = ['ritual', 'evidence', 'day_lost', 'ups_prompt', 'day_complete'];
+  const FULLSCREEN = ['ritual', 'day_lost', 'day_complete'];
   if (FULLSCREEN.includes(phase)) {
     const SCREENS = {
-      ups_prompt:   <UpsPrompt />,
       day_lost:     <DayLost />,
       ritual:       <MorningRitual />,
-      evidence:     <EvidenceMode />,
       day_complete: <DayComplete />,
     };
     return SCREENS[phase] || <Spinner />;

@@ -26,7 +26,7 @@ export default function YesterdaySummary() {
   async function goToPlanner() {
     setConfirming(true);
     try {
-      const { data } = await api.put(`/api/days/${dateKey}/phase`, { phase: 'planner' });
+      const { data } = await api.post(`/api/days/${dateKey}/start`);
       setCurrentDay(data.data);
     } finally {
       setConfirming(false);
@@ -82,7 +82,7 @@ export default function YesterdaySummary() {
             disabled={confirming}
             className="w-full bg-white text-black font-black py-4 rounded-xl text-lg active:scale-95 disabled:opacity-50 transition-transform"
           >
-            {confirming ? 'Cargando...' : 'PLANIFICAR HOY →'}
+            {confirming ? 'Cargando...' : 'COMENZAR DÍA →'}
           </button>
         </div>
       </div>
@@ -138,7 +138,7 @@ export default function YesterdaySummary() {
         disabled={confirming}
         className="w-full bg-white text-black font-black py-4 rounded-xl text-xl active:scale-95 disabled:opacity-50 transition-transform"
       >
-        {confirming ? 'Cargando...' : 'PLANIFICAR HOY →'}
+        {confirming ? 'Cargando...' : 'COMENZAR DÍA →'}
       </button>
     </div>
   );
