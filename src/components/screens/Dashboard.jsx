@@ -169,6 +169,14 @@ export default function Dashboard({ setNavScreen }) {
           )}
 
 
+          {/* Coach IA button */}
+          <button
+            onClick={() => document.getElementById('ai-chat-trigger')?.click()}
+            className="w-full bg-[#101010] border border-[#2C2C2C] hover:border-white text-[#6B7280] hover:text-white py-3 rounded-xl text-sm font-medium transition-colors flex items-center justify-center gap-2"
+          >
+            <span className="text-white font-black">✦</span> Coach IA
+          </button>
+
           {/* Close day button */}
           <button
             onClick={handleCloseDay}
