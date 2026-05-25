@@ -38,10 +38,10 @@ export function EvidenceForm({ block, onSubmit, onCancel }) {
     setSaving(true);
     try {
       await onSubmit({
-        block_id:    block.id,
-        q1:          noLohice ? null : q1,
+        block_id:   block.id,
+        q1:         noLohice ? null : q1,
         focus_level: noLohice ? null : focusLevel,
-        photo_path:  photo,
+        photo_data:  noLohice ? null : photo,
         no_hice:     noLohice,
         reason:      noLohice ? reason : null,
       });
