@@ -10,6 +10,7 @@ import ScoreRing from '../ui/ScoreRing';
 import ProgressBar from '../ui/ProgressBar';
 import AreaBadge from '../ui/AreaBadge';
 import EvidenceInline from '../ui/EvidenceInline';
+import AiChat from '../ui/AiChat';
 import api from '../../api/index.js';
 
 const AREA_MINS = { NEGOCIO: 300, SEGUNDA: 60, ESTUDIO: 180, EJERCICIO: 30 };
@@ -52,6 +53,7 @@ export default function Dashboard({ setNavScreen }) {
 
   return (
     <div className="min-h-screen px-4 py-5 max-w-7xl mx-auto">
+      <AiChat />
       {/* Phrase */}
       {currentDay.daily_phrase && (
         <p className="italic text-[#6B7280] text-sm text-center mb-5 px-4">
