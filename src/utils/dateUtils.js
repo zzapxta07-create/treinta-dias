@@ -1,42 +1,43 @@
+// ─── FIXED: always use local date components, NEVER toISOString() ──────────
+// toISOString() returns UTC — in UTC-5 between 19:00-23:59 it gives tomorrow's date.
+
 export function todayKey() {
   const d = new Date();
-  return d.toISOString().split("T")[0];
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
-// App "day" starts at 7am. Before 7am it's still the previous app-day.
+// App "day" starts at 7:00am local time. Before 7am → previous day.
 export function appDayKey() {
   const now = new Date();
   if (now.getHours() < 7) {
-    const yesterday = new Date(now);
-    yesterday.setDate(yesterday.getDate() - 1);
-    return yesterday.toISOString().split("T")[0];
+    const y = now.getDate() === 1
+      ? new Date(now.getFullYear(), now.getMonth(), 0) // last day of prev month
+      : new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1);
+    return `${y.getFullYear()}-${String(y.getMonth() + 1).padStart(2, '0')}-${String(y.getDate()).padStart(2, '0')}`;
   }
   return todayKey();
 }
 
-// True if current time is after 8:00am
+// True if current local time is at or after 8:00am
 export function isLate() {
-  const now = new Date();
-  return now.getHours() >= 8;
+  return new Date().getHours() >= 8;
 }
 
-// "HH:MM" string from Date or timestamp
-export function formatTime(dateOrTs) {
-  const d = dateOrTs instanceof Date ? dateOrTs : new Date(dateOrTs);
-  return d.toTimeString().slice(0, 5);
+// "HH:MM" from Date
+export function formatTime(d) {
+  const date = d instanceof Date ? d : new Date(d);
+  return `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
 }
 
 // "HH:MM" → minutes since midnight
 export function timeToMinutes(hhmm) {
-  const [h, m] = hhmm.split(":").map(Number);
+  const [h, m] = hhmm.split(':').map(Number);
   return h * 60 + m;
 }
 
 // minutes since midnight → "HH:MM"
 export function minutesToTime(mins) {
-  const h = Math.floor(mins / 60).toString().padStart(2, "0");
-  const m = (mins % 60).toString().padStart(2, "0");
-  return `${h}:${m}`;
+  return `${String(Math.floor(mins / 60)).padStart(2, '0')}:${String(mins % 60).padStart(2, '0')}`;
 }
 
 // Duration label: "1h 30min"
@@ -48,21 +49,19 @@ export function minutesToLabel(mins) {
   return `${h}h ${m}min`;
 }
 
-// Returns remaining seconds until timestamp
-export function secondsUntil(timestamp) {
-  return Math.max(0, Math.floor((timestamp - Date.now()) / 1000));
+// Remaining seconds until timestamp
+export function secondsUntil(ts) {
+  return Math.max(0, Math.floor((ts - Date.now()) / 1000));
 }
 
 // Format seconds as "MM:SS"
 export function formatCountdown(seconds) {
-  const m = Math.floor(seconds / 60).toString().padStart(2, "0");
-  const s = (seconds % 60).toString().padStart(2, "0");
-  return `${m}:${s}`;
+  return `${String(Math.floor(seconds / 60)).padStart(2, '0')}:${String(seconds % 60).padStart(2, '0')}`;
 }
 
-// Adds dateKey + N calendar days → "YYYY-MM-DD"
+// dateKey + N calendar days → "YYYY-MM-DD" (safe: uses T12:00:00 to avoid DST issues)
 export function addDays(dateKey, n) {
-  const d = new Date(dateKey + "T12:00:00");
+  const d = new Date(dateKey + 'T12:00:00');
   d.setDate(d.getDate() + n);
-  return d.toISOString().split("T")[0];
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }

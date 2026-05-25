@@ -1,202 +1,296 @@
-import { useEffect } from "react";
-import { useStore } from "../../store/useStore";
-import { useCurrentTime } from "../../hooks/useCurrentTime";
-import { useActiveBlock } from "../../hooks/useActiveBlock";
-import { AREAS } from "../../data/areas";
-import { formatTime, minutesToLabel } from "../../utils/dateUtils";
-import { calcDayScore, areaMinutesFromBlocks, calcTotalScore } from "../../utils/scoring";
-import ProgressBar from "../ui/ProgressBar";
-import Calendar30 from "../ui/Calendar30";
-import ScoreBar from "../ui/ScoreBar";
+import { useEffect, useState } from 'react';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
+import { useStore } from '../../store/useStore';
+import { useCurrentTime } from '../../hooks/useCurrentTime';
+import { useActiveBlock } from '../../hooks/useActiveBlock';
+import { calcDayScore, areaMinutesFromBlocks } from '../../utils/scoring';
+import { formatTime, minutesToLabel, minutesToTime } from '../../utils/dateUtils';
+import { AREAS, MANDATORY_AREAS } from '../../data/areas';
+import ScoreRing from '../ui/ScoreRing';
+import ProgressBar from '../ui/ProgressBar';
+import AreaBadge from '../ui/AreaBadge';
+import api from '../../api/index.js';
 
-export default function Dashboard() {
-  const now = useCurrentTime();
-  const activeBlock = useActiveBlock();
+const AREA_MINS = { NEGOCIO: 300, SEGUNDA: 60, ESTUDIO: 180, EJERCICIO: 30 };
+
+export default function Dashboard({ setNavScreen }) {
+  const now        = useCurrentTime();
   const currentDay = useStore((s) => s.currentDay);
-  const days = useStore((s) => s.days);
-  const projects = useStore((s) => s.projects);
+  const config     = useStore((s) => s.config);
   const startEvidenceTimer = useStore((s) => s.startEvidenceTimer);
+  const setCurrentDay      = useStore((s) => s.setCurrentDay);
+  const activeBlock = useActiveBlock();
 
-  // Auto-trigger evidence: fire on exact :30 marks AND catch missed slots on enter
+  const [recentDays, setRecentDays] = useState([]);
+
+  // Load 7-day chart
   useEffect(() => {
-    if (!activeBlock || activeBlock.area === "OTROS") return;
-    if (currentDay.phase !== "dashboard") return;
+    api.get('/api/stats/history?days=7').then((r) => setRecentDays(r.data.data)).catch(() => {});
+  }, []);
 
-    const currentMinutes = now.getHours() * 60 + now.getMinutes();
-    const elapsed = currentMinutes - activeBlock.startMinutes;
+  // Evidence trigger: every 60 minutes per active block
+  useEffect(() => {
+    if (!activeBlock || activeBlock.area_id === 'OTROS') return;
+    if (currentDay?.phase !== 'dashboard') return;
+
+    const currentMins = now.getHours() * 60 + now.getMinutes();
+    const blockStart  = activeBlock.start_minutes ?? activeBlock.startMinutes;
+    const elapsed     = currentMins - blockStart;
     if (elapsed <= 0) return;
 
-    // Find the latest slot that should have been triggered by now
-    const latestSlot = Math.floor(elapsed / 30);
+    const latestSlot = Math.floor(elapsed / 60);
     if (latestSlot < 1) return;
 
-    // Trigger the first pending slot (in order)
+    const evidences = currentDay.evidences || [];
     for (let slot = 1; slot <= latestSlot; slot++) {
-      const alreadyDone = currentDay.evidences.some(
-        (e) => e.blockId === activeBlock.id && e.slotIndex === slot
+      const done = evidences.some(
+        (e) => e.block_id === activeBlock.id && e.slot_index === slot
       );
-      if (!alreadyDone) {
+      if (!done) {
         startEvidenceTimer(activeBlock.id, slot);
         return;
       }
     }
-  }, [now.getMinutes(), activeBlock?.id]);
+  }, [now.getMinutes(), activeBlock?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  if (!currentDay) return null;
+
+  const score    = calcDayScore(currentDay);
   const areaMins = areaMinutesFromBlocks(currentDay.blocks || []);
-  const dayScore = calcDayScore({ ...currentDay, status: "partial" });
-  const totalScore = calcTotalScore(days);
 
-  const urgentProjects = [...projects]
-    .filter(
-      (p) =>
-        p.deadline &&
-        p.type === "percent" &&
-        (p.progress || 0) < 100
-    )
-    .sort((a, b) => new Date(a.deadline) - new Date(b.deadline))
-    .slice(0, 6);
+  // Next blocks
+  const currentMins = now.getHours() * 60 + now.getMinutes();
+  const upcomingBlocks = (currentDay.blocks || [])
+    .filter((b) => (b.start_minutes ?? b.startMinutes) > currentMins)
+    .slice(0, 3);
 
-  const AREA_MINS = { NEGOCIO: 300, SEGUNDA: 60, ESTUDIO: 180, EJERCICIO: 30 };
+  // Pending evidences (missed slots)
+  const pendingSlots = [];
+  for (const b of currentDay.blocks || []) {
+    if (b.area_id === 'OTROS') continue;
+    const elapsed    = currentMins - (b.start_minutes ?? b.startMinutes);
+    if (elapsed < 60) continue;
+    const latestSlot = Math.floor(elapsed / 60);
+    for (let slot = 1; slot <= latestSlot; slot++) {
+      const done = (currentDay.evidences || []).some(
+        (e) => e.block_id === b.id && e.slot_index === slot
+      );
+      if (!done) pendingSlots.push({ block: b, slot });
+    }
+  }
+
+  // Chart data
+  const chartData = [...recentDays].reverse().map((d) => ({
+    date:  d.date_key?.slice(5),
+    score: d.score || 0,
+  }));
+
+  // Urgent projects (deadline ≤ 5 days)
+  const urgentProjects = [];
+
+  async function handleCloseDay() {
+    const { data } = await api.put(`/api/days/${currentDay.date_key}/phase`, { phase: 'close' });
+    setCurrentDay(data.data);
+  }
 
   return (
-    <div className="min-h-screen px-4 py-5 max-w-lg mx-auto pb-24">
+    <div className="min-h-screen px-4 py-5 max-w-7xl mx-auto">
       {/* Phrase */}
-      {currentDay.dailyPhrase && (
-        <p className="italic text-gray-600 text-sm text-center mb-5 px-4">
-          "{currentDay.dailyPhrase}"
+      {currentDay.daily_phrase && (
+        <p className="italic text-[#6B7280] text-sm text-center mb-5 px-4">
+          "{currentDay.daily_phrase}"
         </p>
       )}
 
-      {/* Time + Active Block */}
-      <div className="bg-[#111111] rounded-2xl p-4 mb-4">
-        <div className="flex items-center justify-between">
-          <div className="text-4xl font-mono font-black text-white">
-            {formatTime(now)}
-          </div>
-          {activeBlock ? (
-            <div className="text-right">
-              <p className="text-green-400 text-xs font-medium uppercase tracking-wider">
-                Bloque activo
-              </p>
-              <p className="text-white text-sm">
-                {activeBlock.startTime}–{activeBlock.endTime}
-              </p>
-              <p className="text-gray-500 text-xs">
-                {AREAS[activeBlock.area]?.label}
-              </p>
+      <div className="flex flex-col md:flex-row gap-4">
+        {/* ── Left column (40%) ──────────────────────────────────── */}
+        <div className="md:w-[40%] flex flex-col gap-3">
+          {/* Clock + active block */}
+          <div className="bg-[#101010] rounded-2xl p-4 border border-[#2C2C2C]">
+            <div className="flex items-center justify-between">
+              <div className="font-mono text-5xl font-black text-white tabular-nums">
+                {formatTime(now)}
+              </div>
+              {activeBlock ? (
+                <div className="text-right">
+                  <p className="text-green-400 text-[10px] font-medium uppercase tracking-wider mb-0.5">
+                    Activo
+                  </p>
+                  <p className="text-white text-sm font-mono">
+                    {minutesToTime(activeBlock.start_minutes ?? activeBlock.startMinutes)}–
+                    {minutesToTime(activeBlock.end_minutes   ?? activeBlock.endMinutes)}
+                  </p>
+                  <AreaBadge area={activeBlock.area_id || activeBlock.area} />
+                </div>
+              ) : (
+                <p className="text-[#374151] text-sm">Sin bloque activo</p>
+              )}
             </div>
-          ) : (
-            <p className="text-gray-600 text-sm">Sin bloque activo</p>
-          )}
-        </div>
-        {activeBlock?.area === "OTROS" && (
-          <p className="text-gray-500 text-xs mt-2 italic">
-            Hace lo que tenés que hacer — no problem 👍
-          </p>
-        )}
-      </div>
 
-      {/* Scores */}
-      <div className="grid grid-cols-2 gap-3 mb-4">
-        <div className="bg-[#111111] rounded-2xl p-4 text-center">
-          <p className="text-gray-600 text-xs mb-1">Score hoy</p>
-          <p className="text-4xl font-black text-white">{dayScore}</p>
-          <p className="text-gray-700 text-xs">/ 100</p>
-        </div>
-        <div className="bg-[#111111] rounded-2xl p-4 text-center">
-          <p className="text-gray-600 text-xs mb-1">Score total</p>
-          <p className="text-4xl font-black text-white">{Math.max(0, totalScore)}</p>
-          <p className="text-gray-700 text-xs">meta 2100</p>
-        </div>
-      </div>
+            {/* Time remaining in active block */}
+            {activeBlock && (() => {
+              const end    = activeBlock.end_minutes ?? activeBlock.endMinutes;
+              const remain = end - currentMins;
+              return remain > 0 ? (
+                <div className="mt-3 pt-3 border-t border-[#2C2C2C]">
+                  <div className="flex justify-between text-xs mb-1">
+                    <span className="text-[#6B7280]">Tiempo restante</span>
+                    <span className="text-white font-mono">{minutesToLabel(remain)}</span>
+                  </div>
+                  <div className="h-1 bg-[#222222] rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-green-400 rounded-full transition-all"
+                      style={{
+                        width: `${Math.max(0, 100 - (remain / ((activeBlock.end_minutes ?? activeBlock.endMinutes) - (activeBlock.start_minutes ?? activeBlock.startMinutes)) * 100))}%`,
+                      }}
+                    />
+                  </div>
+                </div>
+              ) : null;
+            })()}
+          </div>
 
-      {/* Area minimums progress */}
-      <div className="bg-[#111111] rounded-2xl p-4 mb-4">
-        <p className="text-xs text-gray-600 mb-3 uppercase tracking-wider">
-          Mínimos del día
-        </p>
-        <div className="flex flex-col gap-3">
-          {Object.entries(AREA_MINS).map(([id, req]) => (
-            <ProgressBar
-              key={id}
-              label={`${AREAS[id].label} (${minutesToLabel(areaMins[id] || 0)} / ${minutesToLabel(req)})`}
-              value={areaMins[id] || 0}
-              max={req}
-              color={AREAS[id].color}
-            />
-          ))}
-        </div>
-      </div>
-
-      {/* Area scores (month) */}
-      <div className="bg-[#111111] rounded-2xl p-4 mb-4">
-        <p className="text-xs text-gray-600 mb-3 uppercase tracking-wider">
-          Score por área (mes)
-        </p>
-        <ScoreBar />
-      </div>
-
-      {/* Urgent projects */}
-      {urgentProjects.length > 0 && (
-        <div className="bg-[#111111] rounded-2xl p-4 mb-4">
-          <p className="text-xs text-gray-600 mb-3 uppercase tracking-wider">
-            Proyectos
-          </p>
-          <div className="flex flex-col gap-3">
-            {urgentProjects.map((p) => {
-              const today = new Date();
-              const deadline = new Date(p.deadline + "T12:00:00");
-              const daysLeft = Math.ceil((deadline - today) / 86400000);
-              const urgentColor =
-                daysLeft <= 2
-                  ? "text-red-400"
-                  : daysLeft <= 5
-                  ? "text-yellow-400"
-                  : "text-gray-500";
-              return (
-                <div key={p.id}>
-                  <div className="flex justify-between text-sm mb-1">
-                    <span className="text-gray-300 truncate mr-2 max-w-[75%]">
-                      {p.name}
-                    </span>
-                    <span className={`text-xs shrink-0 ${urgentColor}`}>
-                      {daysLeft > 0 ? `${daysLeft}d` : "vencido"}
+          {/* Upcoming blocks */}
+          {upcomingBlocks.length > 0 && (
+            <div className="bg-[#101010] rounded-2xl p-4 border border-[#2C2C2C]">
+              <p className="text-[10px] text-[#6B7280] uppercase tracking-widest mb-3">Próximos</p>
+              <div className="flex flex-col gap-2">
+                {upcomingBlocks.map((b) => (
+                  <div key={b.id} className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className="font-mono text-sm text-white">
+                        {minutesToTime(b.start_minutes ?? b.startMinutes)}
+                      </span>
+                      <AreaBadge area={b.area_id || b.area} />
+                    </div>
+                    <span className="text-[#6B7280] text-xs">
+                      {minutesToLabel((b.end_minutes ?? b.endMinutes) - (b.start_minutes ?? b.startMinutes))}
                     </span>
                   </div>
-                  <ProgressBar
-                    value={p.progress || 0}
-                    max={100}
-                    color={AREAS[p.area]?.color || "gray"}
-                    showText={false}
-                  />
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Pending evidences */}
+          {pendingSlots.length > 0 && (
+            <div className="bg-[#101010] rounded-2xl p-4 border border-yellow-500/20">
+              <p className="text-[10px] text-yellow-400 uppercase tracking-widest mb-3">
+                Evidencias pendientes
+              </p>
+              <div className="flex flex-col gap-2">
+                {pendingSlots.map(({ block, slot }, i) => (
+                  <div key={i} className="flex items-center justify-between">
+                    <div>
+                      <p className="text-white text-sm">
+                        {minutesToTime(block.start_minutes ?? block.startMinutes)} — Slot {slot}
+                      </p>
+                      <AreaBadge area={block.area_id || block.area} />
+                    </div>
+                    <button
+                      onClick={() => startEvidenceTimer(block.id, slot)}
+                      className="text-xs bg-yellow-500 text-black font-bold px-3 py-1.5 rounded-lg active:scale-95 transition-transform"
+                    >
+                      Registrar
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Close day button */}
+          <button
+            onClick={handleCloseDay}
+            className="w-full bg-[#181818] border border-[#2C2C2C] text-[#6B7280] hover:text-white hover:border-white py-3 rounded-xl text-sm font-medium transition-colors"
+          >
+            Cerrar día
+          </button>
+        </div>
+
+        {/* ── Right column (60%) ─────────────────────────────────── */}
+        <div className="md:w-[60%] flex flex-col gap-3">
+          {/* Score gauge */}
+          <div className="bg-[#101010] rounded-2xl p-4 border border-[#2C2C2C] flex items-center gap-6">
+            <ScoreRing score={score} max={100} size={110} />
+            <div>
+              <p className="text-[#6B7280] text-xs uppercase tracking-widest mb-1">Score del día</p>
+              <p className="text-white text-4xl font-black font-mono">{score}</p>
+              <p className="text-[#6B7280] text-xs">/ 100 puntos</p>
+              {config && (
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <span className="text-[10px] text-[#6B7280] bg-[#181818] px-2 py-0.5 rounded">
+                    UPS: {config.ups_used ? 0 : config.ups_total}
+                  </span>
+                  <span className="text-[10px] text-[#6B7280] bg-[#181818] px-2 py-0.5 rounded">
+                    Esp: {config.special_days_total - config.special_days_used_count}
+                  </span>
+                  <span className="text-[10px] text-[#6B7280] bg-[#181818] px-2 py-0.5 rounded">
+                    Rep: {config.replan_days_total - config.replan_days_used_count}
+                  </span>
                 </div>
-              );
-            })}
+              )}
+            </div>
           </div>
-        </div>
-      )}
 
-      {/* Calendar */}
-      <div className="bg-[#111111] rounded-2xl p-4 mb-4">
-        <p className="text-xs text-gray-600 mb-3 uppercase tracking-wider">
-          30 días
-        </p>
-        <Calendar30 />
+          {/* Area minimums */}
+          <div className="bg-[#101010] rounded-2xl p-4 border border-[#2C2C2C]">
+            <p className="text-[10px] text-[#6B7280] uppercase tracking-widest mb-3">Mínimos del día</p>
+            <div className="flex flex-col gap-3">
+              {MANDATORY_AREAS.map((id) => {
+                const area = AREAS[id];
+                const done = areaMins[id] || 0;
+                const ok   = done >= AREA_MINS[id];
+                return (
+                  <div key={id}>
+                    <div className="flex justify-between text-xs mb-1">
+                      <span className={ok ? 'text-green-400' : 'text-[#6B7280]'}>
+                        {ok ? '✓ ' : ''}{area.label}
+                      </span>
+                      <span className={`font-mono ${ok ? 'text-green-400' : 'text-[#6B7280]'}`}>
+                        {minutesToLabel(done)} / {minutesToLabel(AREA_MINS[id])}
+                      </span>
+                    </div>
+                    <ProgressBar
+                      value={done}
+                      max={AREA_MINS[id]}
+                      color={area.color}
+                      showText={false}
+                    />
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* 7-day chart */}
+          {chartData.length > 0 && (
+            <div className="bg-[#101010] rounded-2xl p-4 border border-[#2C2C2C]">
+              <p className="text-[10px] text-[#6B7280] uppercase tracking-widest mb-3">Últimos 7 días</p>
+              <ResponsiveContainer width="100%" height={80}>
+                <BarChart data={chartData} barSize={16}>
+                  <XAxis dataKey="date" tick={{ fill: '#374151', fontSize: 10 }} axisLine={false} tickLine={false} />
+                  <YAxis domain={[0, 100]} hide />
+                  <Tooltip
+                    contentStyle={{ background: '#181818', border: '1px solid #2C2C2C', borderRadius: 8 }}
+                    labelStyle={{ color: '#F0F0F0', fontSize: 11 }}
+                    itemStyle={{ color: '#F0F0F0', fontSize: 11 }}
+                    formatter={(v) => [`${v} pts`]}
+                  />
+                  <Bar dataKey="score" radius={4}>
+                    {chartData.map((d, i) => (
+                      <Cell
+                        key={i}
+                        fill={d.score >= 70 ? '#10B981' : d.score >= 40 ? '#F59E0B' : '#EF4444'}
+                      />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          )}
+        </div>
       </div>
-
-      {/* Shower photo + phrase recap */}
-      {currentDay.showerPhoto && (
-        <div className="bg-[#111111] rounded-2xl p-4 mb-4 flex items-center gap-4">
-          <img
-            src={currentDay.showerPhoto}
-            alt="ducha"
-            className="w-16 h-16 object-cover rounded-xl shrink-0"
-          />
-          <p className="text-gray-500 text-sm italic flex-1">
-            "{currentDay.dailyPhrase}"
-          </p>
-        </div>
-      )}
     </div>
   );
 }

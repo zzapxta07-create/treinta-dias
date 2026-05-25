@@ -1,83 +1,88 @@
-import { useStore } from "../../store/useStore";
-import { addDays, minutesToLabel } from "../../utils/dateUtils";
-import { areaMinutesFromBlocks } from "../../utils/scoring";
-import { AREAS } from "../../data/areas";
+import { useEffect, useState } from 'react';
+import { useStore } from '../../store/useStore';
+import { areaMinutesFromBlocks } from '../../utils/scoring';
+import { minutesToLabel, addDays } from '../../utils/dateUtils';
+import { AREAS } from '../../data/areas';
+import api from '../../api/index.js';
 
 export default function YesterdaySummary() {
-  const setPhase = useStore((s) => s.setPhase);
-  const dayNumber = useStore((s) => s.dayNumber);
-  const days = useStore((s) => s.days);
-  const monthStart = useStore((s) => s.monthStart);
+  const currentDay    = useStore((s) => s.currentDay);
+  const setCurrentDay = useStore((s) => s.setCurrentDay);
+  const [yesterday,   setYesterday]  = useState(null);
+  const [loading,     setLoading]    = useState(true);
+  const [confirming,  setConfirming] = useState(false);
 
-  const isFirstDay = dayNumber === 1;
-  const yesterdayKey = monthStart ? addDays(monthStart, dayNumber - 2) : null;
-  const yesterday = yesterdayKey ? days[yesterdayKey] : null;
+  const dateKey = currentDay?.date_key;
 
-  if (isFirstDay || !yesterday) {
-    const todayLabel = new Date().toLocaleDateString("es-AR", {
-      weekday: "long",
-      day: "numeric",
-      month: "long",
-    });
+  useEffect(() => {
+    if (!dateKey) return;
+    const yday = addDays(dateKey, -1);
+    api.get(`/api/days/${yday}/summary`)
+       .then((r) => setYesterday(r.data.data))
+       .catch(() => setYesterday(null))
+       .finally(() => setLoading(false));
+  }, [dateKey]);
 
+  async function goToPlanner() {
+    setConfirming(true);
+    try {
+      const { data } = await api.put(`/api/days/${dateKey}/phase`, { phase: 'planner' });
+      setCurrentDay(data.data);
+    } finally {
+      setConfirming(false);
+    }
+  }
+
+  const todayLabel = new Date().toLocaleDateString('es-CO', {
+    weekday: 'long', day: 'numeric', month: 'long',
+  });
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center text-[#6B7280]">
+        Cargando...
+      </div>
+    );
+  }
+
+  // First day or no yesterday data
+  if (!yesterday) {
     return (
       <div className="min-h-screen flex flex-col px-6 pt-12 pb-8 max-w-lg mx-auto">
-        {/* Header */}
         <div className="mb-8">
-          <p className="text-gray-600 text-xs uppercase tracking-widest capitalize mb-4">
-            {todayLabel}
-          </p>
-          <div className="flex items-end gap-3 mb-4">
-            <span className="text-8xl font-black leading-none text-white">1</span>
-            <div className="mb-2">
-              <span className="text-gray-500 text-lg">de 30</span>
-            </div>
-          </div>
-          <h2 className="text-2xl font-black text-white leading-tight mb-2">
-            Empieza hoy.
-          </h2>
-          <p className="text-gray-500 text-sm leading-relaxed max-w-xs">
-            30 días de datos reales para tomar la decisión más importante de este año.
+          <p className="text-[#6B7280] text-xs uppercase tracking-widest capitalize mb-4">{todayLabel}</p>
+          <h2 className="text-4xl font-black text-white leading-tight mb-2">Empieza hoy.</h2>
+          <p className="text-[#6B7280] text-sm leading-relaxed max-w-xs">
+            Sistema de productividad permanente — sin límite de días.
           </p>
         </div>
 
-        {/* Divider */}
-        <div className="border-t border-[#1a1a1a] mb-8" />
+        <div className="border-t border-[#2C2C2C] mb-8" />
 
-        {/* Minimums */}
         <div className="mb-8">
-          <p className="text-gray-600 text-xs uppercase tracking-widest mb-4">
-            Mínimos obligatorios cada día
-          </p>
+          <p className="text-[#6B7280] text-xs uppercase tracking-widest mb-4">Mínimos diarios</p>
           <div className="grid grid-cols-2 gap-3">
             {[
-              { label: "Negocio", min: "5h", color: "text-blue-400" },
-              { label: "Estudio", min: "3h", color: "text-purple-400" },
-              { label: "Segunda empresa", min: "1h", color: "text-green-400" },
-              { label: "Ejercicio", min: "30min", color: "text-orange-400" },
+              { label: 'Negocio',  min: '5h',    color: 'text-blue-400' },
+              { label: 'Estudio',  min: '3h',    color: 'text-amber-400' },
+              { label: 'Segunda',  min: '1h',    color: 'text-purple-400' },
+              { label: 'Ejercicio', min: '30min', color: 'text-emerald-400' },
             ].map((item) => (
-              <div key={item.label} className="bg-[#111111] rounded-xl p-3">
+              <div key={item.label} className="bg-[#101010] rounded-xl p-3 border border-[#2C2C2C]">
                 <p className={`text-lg font-black ${item.color}`}>{item.min}</p>
-                <p className="text-gray-500 text-xs mt-0.5">{item.label}</p>
+                <p className="text-[#6B7280] text-xs mt-0.5">{item.label}</p>
               </div>
             ))}
           </div>
         </div>
 
-        {/* Meta */}
-        <div className="bg-[#0f0f0f] border border-[#1e1e1e] rounded-2xl p-4 mb-8">
-          <p className="text-gray-600 text-xs uppercase tracking-widest mb-2">Meta</p>
-          <p className="text-gray-300 text-sm leading-relaxed">
-            ≥2100 puntos totales · ≥80% cumplimiento de hábitos
-          </p>
-        </div>
-
         <div className="mt-auto">
           <button
-            onClick={() => setPhase("planner")}
-            className="w-full bg-white text-black font-black py-4 rounded-xl text-lg active:scale-95 transition-transform"
+            onClick={goToPlanner}
+            disabled={confirming}
+            className="w-full bg-white text-black font-black py-4 rounded-xl text-lg active:scale-95 disabled:opacity-50 transition-transform"
           >
-            PLANIFICAR DÍA 1 →
+            {confirming ? 'Cargando...' : 'PLANIFICAR HOY →'}
           </button>
         </div>
       </div>
@@ -85,108 +90,55 @@ export default function YesterdaySummary() {
   }
 
   const areaMins = areaMinutesFromBlocks(yesterday.blocks || []);
-  const score = yesterday.score || 0;
-  const statusLabel =
-    yesterday.status === "complete"
-      ? "Completo"
-      : yesterday.status === "lost"
-      ? "Perdido"
-      : "Parcial";
-  const statusColor =
-    yesterday.status === "complete"
-      ? "bg-green-600 text-white"
-      : yesterday.status === "lost"
-      ? "bg-red-600 text-white"
-      : "bg-yellow-500 text-black";
+  const score    = yesterday.score || 0;
+  const statusLabel = yesterday.status === 'complete' ? 'Completo' : yesterday.status === 'lost' ? 'Perdido' : 'Parcial';
+  const statusColor = yesterday.status === 'complete'
+    ? 'bg-green-600 text-white'
+    : yesterday.status === 'lost'
+    ? 'bg-red-600 text-white'
+    : 'bg-yellow-500 text-black';
 
   return (
     <div className="min-h-screen px-4 py-6 max-w-lg mx-auto">
-      <p className="text-gray-500 text-xs uppercase tracking-wider mb-1">
-        Resumen de ayer — Día {dayNumber - 1}
-      </p>
+      <p className="text-[#6B7280] text-xs uppercase tracking-wider mb-1">Resumen de ayer</p>
       <div className="flex items-baseline gap-3 mb-6">
-        <span className="text-5xl font-black text-white">{score}</span>
-        <span className="text-gray-500 text-xl">/ 100 pts</span>
+        <span className="text-5xl font-black text-white font-mono">{score}</span>
+        <span className="text-[#6B7280] text-xl">/ 100 pts</span>
         <span className={`ml-auto text-xs font-bold px-2 py-1 rounded-lg ${statusColor}`}>
           {statusLabel}
         </span>
       </div>
 
-      {/* Area breakdown */}
-      <div className="bg-[#111111] rounded-2xl p-4 mb-4">
-        <p className="text-xs text-gray-600 mb-3 uppercase tracking-wider">Horas por área</p>
+      <div className="bg-[#101010] rounded-2xl p-4 mb-4 border border-[#2C2C2C]">
+        <p className="text-xs text-[#6B7280] mb-3 uppercase tracking-wider">Horas por área</p>
         <div className="flex flex-col gap-2">
-          {Object.entries(AREAS)
-            .filter(([id]) => id !== "OTROS")
-            .map(([id, area]) => {
-              const mins = areaMins[id] || 0;
-              const met = mins >= area.minMinutes;
-              return (
-                <div key={id} className="flex justify-between items-center text-sm">
-                  <span className={met ? "text-green-400" : "text-gray-400"}>
-                    {area.label}
-                  </span>
-                  <span className={`font-mono ${met ? "text-green-400" : "text-gray-500"}`}>
-                    {minutesToLabel(mins)}
-                  </span>
-                </div>
-              );
-            })}
+          {Object.entries(AREAS).filter(([id]) => id !== 'OTROS').map(([id, area]) => {
+            const mins = areaMins[id] || 0;
+            const ok   = mins >= area.minMinutes;
+            return (
+              <div key={id} className="flex justify-between items-center text-sm">
+                <span className={ok ? 'text-green-400' : 'text-[#6B7280]'}>{area.label}</span>
+                <span className={`font-mono ${ok ? 'text-green-400' : 'text-[#6B7280]'}`}>
+                  {minutesToLabel(mins)}
+                </span>
+              </div>
+            );
+          })}
         </div>
       </div>
 
-      {/* Blocks */}
-      {(yesterday.blocks || []).length > 0 && (
-        <div className="bg-[#111111] rounded-2xl p-4 mb-4">
-          <p className="text-xs text-gray-600 mb-3 uppercase tracking-wider">Bloques</p>
-          <div className="flex flex-col gap-2">
-            {yesterday.blocks.map((b) => {
-              const evs = (yesterday.evidences || []).filter(
-                (e) => e.blockId === b.id
-              );
-              const slots = Math.max(1, Math.floor((b.endMinutes - b.startMinutes) / 30));
-              const done = evs.filter((e) => !e.noHice).length;
-              const ok = done >= slots;
-              return (
-                <div
-                  key={b.id}
-                  className="flex justify-between items-center text-sm"
-                >
-                  <div>
-                    <span className="text-gray-300 font-mono">
-                      {b.startTime}–{b.endTime}
-                    </span>
-                    <span className="text-gray-600 ml-2 text-xs">
-                      {AREAS[b.area]?.label}
-                    </span>
-                  </div>
-                  <span
-                    className={`text-xs px-2 py-0.5 rounded font-mono ${
-                      ok
-                        ? "bg-green-900 text-green-400"
-                        : "bg-[#222222] text-gray-500"
-                    }`}
-                  >
-                    {done}/{slots}
-                  </span>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
-
-      {yesterday.dailyPhrase && (
-        <p className="italic text-gray-600 text-sm mb-6 text-center px-4">
-          "{yesterday.dailyPhrase}"
+      {yesterday.daily_phrase && (
+        <p className="italic text-[#6B7280] text-sm mb-6 text-center px-4">
+          "{yesterday.daily_phrase}"
         </p>
       )}
 
       <button
-        onClick={() => setPhase("planner")}
-        className="w-full bg-white text-black font-black py-4 rounded-xl text-xl active:scale-95 transition-transform"
+        onClick={goToPlanner}
+        disabled={confirming}
+        className="w-full bg-white text-black font-black py-4 rounded-xl text-xl active:scale-95 disabled:opacity-50 transition-transform"
       >
-        PLANIFICAR HOY →
+        {confirming ? 'Cargando...' : 'PLANIFICAR HOY →'}
       </button>
     </div>
   );
