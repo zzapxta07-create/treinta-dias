@@ -184,7 +184,7 @@ export default function History() {
 
   useEffect(() => {
     setLoading(true);
-    const q = range > 0 ? `?days=${range}` : '';
+    const q = range > 0 ? `?days=${range}` : '?days=0';
     api.get(`/api/stats/history${q}`)
        .then((r) => setDays(r.data.data || []))
        .catch(() => setDays([]))

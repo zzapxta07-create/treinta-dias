@@ -53,9 +53,9 @@ export default function DayClose() {
     });
     try {
       const { data } = await api.put(`/api/days/${currentDay.date_key}/close`, {
-        emotional_state:   emotionalState,
-        close_photo_path:  photo,
-        project_progress:  merged,
+        emotional_state:  emotionalState,
+        close_photo_path: photo,
+        project_progress: merged,
       });
       setCurrentDay(data.data);
     } finally {

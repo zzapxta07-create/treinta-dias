@@ -52,7 +52,7 @@ export default function MorningRitual() {
       <div className="min-h-screen flex flex-col items-center justify-center bg-[#080808] text-center px-6">
         <div className="text-6xl mb-4">💤</div>
         <p className="text-red-400 text-2xl font-black">Tiempo agotado</p>
-        <p className="text-[#6B7280] mt-3">El día quedó perdido. Mañana a las 7am de nuevo.</p>
+        <p className="text-[#6B7280] mt-3">El día quedó perdido. Podés recuperarlo desde la pantalla de día perdido.</p>
       </div>
     );
   }
