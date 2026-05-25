@@ -40,11 +40,9 @@ function CustomTooltip({ active, payload, label }) {
 }
 
 export default function History() {
-  const [days,          setDays]          = useState([]);
-  const [range,         setRange]         = useState(30);
-  const [loading,       setLoading]       = useState(true);
-  const [weeklySummary, setWeeklySummary] = useState(null);
-  const [weeklyLoading, setWeeklyLoading] = useState(false);
+  const [days,    setDays]    = useState([]);
+  const [range,   setRange]   = useState(30);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     setLoading(true);
@@ -70,36 +68,11 @@ export default function History() {
 
   return (
     <div className="px-4 py-6 max-w-2xl mx-auto pb-24">
-      {/* Weekly AI summary */}
+      {/* Weekly AI — opens chat with pre-filled message */}
       <div className="mb-5">
-        {weeklySummary ? (
-          <div className="bg-[#101010] rounded-2xl p-4 border border-[#2C2C2C]">
-            <div className="flex items-center justify-between mb-2">
-              <p className="text-xs text-[#374151] uppercase tracking-wider">✦ Resumen semanal IA</p>
-              <button onClick={() => setWeeklySummary(null)} className="text-[#374151] hover:text-[#6B7280] text-xs">✕</button>
-            </div>
-            <p className="text-[#F0F0F0] text-sm leading-relaxed whitespace-pre-line">{weeklySummary}</p>
-          </div>
-        ) : (
-          <button
-            onClick={async () => {
-              setWeeklyLoading(true);
-              try {
-                const { data } = await api.post('/api/ai/weekly');
-                const d = data.data;
-                setWeeklySummary(
-                  d?.summary || d?.response || d?.text || d?.message
-                  || (typeof d === 'string' ? d : 'Sin respuesta.')
-                );
-              } catch { setWeeklySummary('Error al conectar con el asistente.'); }
-              finally { setWeeklyLoading(false); }
-            }}
-            disabled={weeklyLoading}
-            className="w-full bg-[#101010] border border-[#2C2C2C] hover:border-[#444] text-[#6B7280] hover:text-white py-3 rounded-xl text-sm font-medium transition-colors disabled:opacity-50"
-          >
-            {weeklyLoading ? '✦ Analizando semana...' : '✦ Generar resumen semanal con IA'}
-          </button>
-        )}
+        <p className="text-xs text-[#374151] text-center">
+          ✦ Usá el chat IA (abajo derecha) para pedir un resumen semanal o análisis de historial
+        </p>
       </div>
 
       <div className="flex items-center justify-between mb-6">
