@@ -11,6 +11,7 @@ import ProgressBar from '../ui/ProgressBar';
 import AreaBadge from '../ui/AreaBadge';
 import EvidenceInline from '../ui/EvidenceInline';
 import AiChat from '../ui/AiChat';
+import { EvidenceForm } from '../ui/EvidenceInline';
 import api from '../../api/index.js';
 
 const AREA_MINS = { NEGOCIO: 300, SEGUNDA: 60, ESTUDIO: 180, EJERCICIO: 30 };
@@ -22,7 +23,8 @@ export default function Dashboard({ setNavScreen }) {
   const setCurrentDay = useStore((s) => s.setCurrentDay);
   const activeBlock = useActiveBlock();
 
-  const [recentDays, setRecentDays] = useState([]);
+  const [recentDays,    setRecentDays]    = useState([]);
+  const [showEvForm,    setShowEvForm]    = useState(false);
 
   useEffect(() => {
     api.get('/api/stats/history?days=7').then((r) => setRecentDays(r.data.data)).catch(() => {});
@@ -31,7 +33,17 @@ export default function Dashboard({ setNavScreen }) {
   if (!currentDay) return null;
 
   const score    = calcDayScore(currentDay);
-  const areaMins = areaMinutesFromBlocks(currentDay.blocks || []);
+  const areaMins = areaMinutesFromBlocks(currentDay.blocks || [], currentDay.evidences || []);
+
+  const activeBlockHasEvidence = activeBlock &&
+    (currentDay.evidences || []).some(e => e.block_id === activeBlock.id);
+
+  async function handleEvidenceSubmit(payload) {
+    await api.post('/api/evidences', payload);
+    const r = await api.get(`/api/days/${currentDay.date_key}`);
+    setCurrentDay(r.data.data);
+    setShowEvForm(false);
+  }
   const currentMins = now.getHours() * 60 + now.getMinutes();
   const upcomingBlocks = (currentDay.blocks || [])
     .filter((b) => (b.start_minutes ?? b.startMinutes) > currentMins)
@@ -99,7 +111,7 @@ export default function Dashboard({ setNavScreen }) {
                     <span className="text-[#6B7280]">Tiempo restante</span>
                     <span className="text-white font-mono">{minutesToLabel(remain)}</span>
                   </div>
-                  <div className="h-1 bg-[#222222] rounded-full overflow-hidden">
+                  <div className="h-1 bg-[#222222] rounded-full overflow-hidden mb-3">
                     <div
                       className="h-full bg-green-400 rounded-full transition-all"
                       style={{
@@ -107,9 +119,31 @@ export default function Dashboard({ setNavScreen }) {
                       }}
                     />
                   </div>
+                  {(activeBlock.area_id || activeBlock.area) !== 'OTROS' && (
+                    activeBlockHasEvidence ? (
+                      <p className="text-green-400 text-xs font-bold text-center">✓ Evidencia enviada</p>
+                    ) : (
+                      <button
+                        onClick={() => setShowEvForm(v => !v)}
+                        className="w-full bg-[#1a1a1a] border border-[#2C2C2C] hover:border-white text-white text-xs font-bold py-2 rounded-xl transition-colors"
+                      >
+                        📎 Adjuntar evidencia
+                      </button>
+                    )
+                  )}
                 </div>
               ) : null;
             })()}
+
+            {showEvForm && activeBlock && !activeBlockHasEvidence && (
+              <div className="mt-3">
+                <EvidenceForm
+                  block={activeBlock}
+                  onSubmit={handleEvidenceSubmit}
+                  onCancel={() => setShowEvForm(false)}
+                />
+              </div>
+            )}
           </div>
 
           {/* Upcoming blocks */}
