@@ -23,7 +23,7 @@ export default function DayLost() {
       <div className="text-7xl font-black text-red-500 tracking-widest mb-4 leading-none">
         DÍA<br />PERDIDO
       </div>
-      <p className="text-[#6B7280] mb-6">{currentDay?.date_key}</p>
+      <p className="text-[#6B7280] mb-6">{currentDay?.date_key?.toString().slice(0, 10)}</p>
       <div className="bg-[#181818] rounded-2xl p-6 mb-8 max-w-xs w-full border border-[#2C2C2C]">
         <p className="text-[#6B7280] text-sm mb-1">Penalización aplicada</p>
         <p className="text-red-400 text-4xl font-black font-mono">−150 pts</p>

@@ -5,12 +5,13 @@ import AiChat from '../ui/AiChat';
 export default function DayComplete() {
   const currentDay = useStore((s) => s.currentDay);
   const score      = currentDay ? (currentDay.score || calcDayScore(currentDay)) : 0;
+  const dateLabel  = currentDay?.date_key?.toString().slice(0, 10);
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-[#080808] px-6 text-center pb-12">
       <div className="text-6xl mb-6 text-green-400">✓</div>
       <h1 className="text-3xl font-black text-white mb-2">
-        Día cerrado — {currentDay?.date_key}
+        Día cerrado — {dateLabel}
       </h1>
       <p className="text-[#6B7280] mb-8">
         Score: <span className="text-white font-bold font-mono">{score} pts</span>
@@ -27,7 +28,7 @@ export default function DayComplete() {
       </p>
 
       {/* Coach preloaded with today's analysis */}
-      <AiChat initialMessage={`Analiza mi día ${currentDay?.date_key} y dame feedback honesto como coach. Revisá mis bloques, áreas completadas, evidencias y score.`} />
+      <AiChat initialMessage={`Analiza mi día ${dateLabel} y dame feedback honesto como coach. Revisá mis bloques, áreas completadas, evidencias y score.`} />
     </div>
   );
 }

@@ -138,7 +138,7 @@ export default function DayPlanner() {
     <div className="min-h-screen px-4 py-6 max-w-2xl mx-auto pb-28">
       <h1 className="text-xl font-black mb-1">Planificar Hoy</h1>
       <p className="text-[#6B7280] text-sm mb-5">
-        {currentDay?.date_key} — Creá los bloques del día.
+        {currentDay?.date_key?.toString().slice(0, 10)} — Creá los bloques del día.
       </p>
 
       {/* Minimums tracker */}
