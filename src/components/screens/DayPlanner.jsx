@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { useStore } from '../../store/useStore';
 import { AREAS, MANDATORY_AREAS } from '../../data/areas';
 import { timeToMinutes, minutesToTime, minutesToLabel } from '../../utils/dateUtils';
-import { areaMinutesFromBlocks } from '../../utils/scoring';
 import AreaBadge from '../ui/AreaBadge';
 import api from '../../api/index.js';
 
@@ -21,7 +20,13 @@ export default function DayPlanner() {
   const [saving,   setSaving]   = useState(false);
   const [confirming, setConfirming] = useState(false);
 
-  const areaMins = areaMinutesFromBlocks(blocks);
+  const areaMins = blocks.reduce((acc, b) => {
+    const area = b.area_id || b.area;
+    if (area && area !== 'OTROS' && acc[area] !== undefined) {
+      acc[area] += (b.end_minutes ?? b.endMinutes) - (b.start_minutes ?? b.startMinutes);
+    }
+    return acc;
+  }, { NEGOCIO: 0, SEGUNDA: 0, ESTUDIO: 0, EJERCICIO: 0 });
   const isSpecial = currentDay?.is_special_day;
   const canActivateSpecial = config && !isSpecial &&
     (config.special_days_total - config.special_days_used_count) > 0;

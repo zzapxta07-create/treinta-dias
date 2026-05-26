@@ -4,7 +4,7 @@ import { useStore } from '../../store/useStore';
 import { useCurrentTime } from '../../hooks/useCurrentTime';
 import { useActiveBlock } from '../../hooks/useActiveBlock';
 import { calcDayScore, areaMinutesFromBlocks } from '../../utils/scoring';
-import { formatTime, minutesToLabel, minutesToTime } from '../../utils/dateUtils';
+import { formatTime, minutesToLabel, minutesToTime, timeToMinutes } from '../../utils/dateUtils';
 import { AREAS, MANDATORY_AREAS } from '../../data/areas';
 import ScoreRing from '../ui/ScoreRing';
 import EvidenceInline from '../ui/EvidenceInline';
@@ -18,6 +18,86 @@ const AREA_HEX  = {
   EJERCICIO: '#10B981', OTROS: '#6B7280',
 };
 
+// ── Inline block editor row ──────────────────────────────────────────────────
+function BlockEditRow({ block, projects, onSave, onCancel }) {
+  const s0 = block.start_minutes ?? block.startMinutes;
+  const e0 = block.end_minutes   ?? block.endMinutes;
+  const [start,   setStart]   = useState(minutesToTime(s0));
+  const [end,     setEnd]     = useState(minutesToTime(e0));
+  const [area,    setArea]    = useState(block.area_id || block.area);
+  const [err,     setErr]     = useState('');
+  const [saving,  setSaving]  = useState(false);
+
+  async function handleSave() {
+    const sm = timeToMinutes(start);
+    const em = timeToMinutes(end);
+    if (em <= sm) { setErr('El fin debe ser después del inicio.'); return; }
+    setSaving(true);
+    try {
+      await onSave(block.id, {
+        area_id:       area,
+        start_time:    start,
+        end_time:      end,
+        start_minutes: sm,
+        end_minutes:   em,
+      });
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div className="bg-[#1c1915] rounded-xl p-3 mb-2">
+      <div className="flex gap-2 mb-2">
+        <div className="flex-1">
+          <p className="text-[9px] text-[#4a3f35] uppercase tracking-wider mb-1">Inicio</p>
+          <input
+            type="time"
+            value={start}
+            onChange={(e) => setStart(e.target.value)}
+            className="w-full bg-[#12100e] text-[#f5f0e8] text-xs rounded-lg px-2 py-2 border border-[#2a2520] focus:border-[#c9a84c] outline-none"
+          />
+        </div>
+        <div className="flex-1">
+          <p className="text-[9px] text-[#4a3f35] uppercase tracking-wider mb-1">Fin</p>
+          <input
+            type="time"
+            value={end}
+            onChange={(e) => setEnd(e.target.value)}
+            className="w-full bg-[#12100e] text-[#f5f0e8] text-xs rounded-lg px-2 py-2 border border-[#2a2520] focus:border-[#c9a84c] outline-none"
+          />
+        </div>
+      </div>
+      <select
+        value={area}
+        onChange={(e) => setArea(e.target.value)}
+        className="w-full bg-[#12100e] text-[#f5f0e8] text-xs rounded-lg px-2 py-2 border border-[#2a2520] mb-2 outline-none"
+      >
+        {Object.values(AREAS).map((a) => (
+          <option key={a.id} value={a.id}>{a.label}</option>
+        ))}
+      </select>
+      {err && <p className="text-red-400 text-xs mb-2">{err}</p>}
+      <div className="flex gap-2">
+        <button
+          onClick={handleSave}
+          disabled={saving}
+          className="flex-1 bg-[#c9a84c] text-[#0c0a09] text-xs font-black py-2 rounded-lg disabled:opacity-50 active:scale-95 transition-transform"
+        >
+          {saving ? '...' : 'Guardar'}
+        </button>
+        <button
+          onClick={onCancel}
+          className="px-4 text-[#8b7d6b] text-xs bg-[#12100e] border border-[#2a2520] rounded-lg"
+        >
+          Cancelar
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ── Main ─────────────────────────────────────────────────────────────────────
 export default function Dashboard({ setNavScreen }) {
   const now           = useCurrentTime();
   const currentDay    = useStore((s) => s.currentDay);
@@ -25,12 +105,16 @@ export default function Dashboard({ setNavScreen }) {
   const setCurrentDay = useStore((s) => s.setCurrentDay);
   const activeBlock   = useActiveBlock();
 
-  const [recentDays, setRecentDays] = useState([]);
-  const [showEvForm, setShowEvForm] = useState(false);
-  const [chatOpen,   setChatOpen]   = useState(false);
+  const [recentDays,       setRecentDays]       = useState([]);
+  const [showEvForm,       setShowEvForm]        = useState(false);
+  const [chatOpen,         setChatOpen]          = useState(false);
+  const [showBlockManager, setShowBlockManager]  = useState(false);
+  const [editingBlockId,   setEditingBlockId]    = useState(null);
+  const [projects,         setProjects]          = useState([]);
 
   useEffect(() => {
     api.get('/api/stats/history?days=7').then((r) => setRecentDays(r.data.data)).catch(() => {});
+    api.get('/api/projects').then((r) => setProjects(r.data.data || [])).catch(() => {});
   }, []);
 
   if (!currentDay) return null;
@@ -48,24 +132,35 @@ export default function Dashboard({ setNavScreen }) {
     setShowEvForm(false);
   }
 
+  async function handleBlockEdit(blockId, updatedData) {
+    const { data } = await api.put(`/api/blocks/${blockId}`, updatedData);
+    setCurrentDay(data.data.day);
+    setEditingBlockId(null);
+  }
+
   const currentMins    = now.getHours() * 60 + now.getMinutes();
   const upcomingBlocks = (currentDay.blocks || [])
     .filter((b) => (b.start_minutes ?? b.startMinutes) > currentMins)
     .slice(0, 4);
+
+  const allBlocks = [...(currentDay.blocks || [])]
+    .sort((a, b) => (a.start_minutes ?? a.startMinutes) - (b.start_minutes ?? b.startMinutes));
 
   const chartData = [...recentDays].reverse().map((d) => ({
     date:  d.date_key?.slice(5),
     score: d.score || 0,
   }));
 
-  const areaId         = activeBlock?.area_id || activeBlock?.area;
+  const areaId          = activeBlock?.area_id || activeBlock?.area;
   const activeAreaColor = AREA_HEX[areaId] || '#6B7280';
-  const activeStart    = activeBlock ? (activeBlock.start_minutes ?? activeBlock.startMinutes) : 0;
-  const activeEnd      = activeBlock ? (activeBlock.end_minutes   ?? activeBlock.endMinutes)   : 0;
-  const activeRemain   = activeBlock ? Math.max(0, activeEnd - currentMins) : 0;
-  const activeProgress = activeBlock && activeEnd > activeStart
+  const activeStart     = activeBlock ? (activeBlock.start_minutes ?? activeBlock.startMinutes) : 0;
+  const activeEnd       = activeBlock ? (activeBlock.end_minutes   ?? activeBlock.endMinutes)   : 0;
+  const activeRemain    = activeBlock ? Math.max(0, activeEnd - currentMins) : 0;
+  const activeProgress  = activeBlock && activeEnd > activeStart
     ? Math.min(100, ((currentMins - activeStart) / (activeEnd - activeStart)) * 100)
     : 0;
+
+  const editCount = currentDay.block_edits_count || 0;
 
   async function handleCloseDay() {
     const { data } = await api.put(`/api/days/${currentDay.date_key}/phase`, { phase: 'close' });
@@ -174,7 +269,6 @@ export default function Dashboard({ setNavScreen }) {
               )}
             </div>
           ) : (
-            /* No active block */
             <div className="bg-[#12100e] rounded-2xl p-4 border border-[#2a2520]">
               <p className="text-[#4a3f35] text-xs uppercase tracking-wider mb-2">Hora actual</p>
               <p className="font-mono text-5xl font-black text-[#f5f0e8] tabular-nums">
@@ -213,6 +307,74 @@ export default function Dashboard({ setNavScreen }) {
                   );
                 })}
               </div>
+            </div>
+          )}
+
+          {/* Block manager — collapsible */}
+          {allBlocks.length > 0 && (
+            <div className="bg-[#12100e] rounded-2xl border border-[#2a2520]">
+              <button
+                onClick={() => setShowBlockManager(v => !v)}
+                className="w-full flex items-center justify-between px-4 py-3"
+              >
+                <p className="text-[10px] text-[#8b7d6b] uppercase tracking-widest">
+                  Reprogramar bloques
+                </p>
+                <div className="flex items-center gap-2">
+                  {editCount > 0 && (
+                    <span className="text-[10px] text-[#c9a84c] font-mono bg-[#c9a84c]/10 px-2 py-0.5 rounded">
+                      {editCount} edic.
+                    </span>
+                  )}
+                  <span className="text-[#4a3f35] text-xs">{showBlockManager ? '↑' : '↓'}</span>
+                </div>
+              </button>
+
+              {showBlockManager && (
+                <div className="px-4 pb-3 border-t border-[#1c1915]">
+                  <p className="text-[9px] text-[#4a3f35] uppercase tracking-wider mt-3 mb-2">
+                    Cada edición queda registrada
+                  </p>
+                  {allBlocks.map((b) => {
+                    const s     = b.start_minutes ?? b.startMinutes;
+                    const e     = b.end_minutes   ?? b.endMinutes;
+                    const bArea = b.area_id || b.area;
+                    const bColor = AREA_HEX[bArea] || '#6B7280';
+                    const proj  = projects.find((p) => p.id === b.project_id);
+
+                    if (editingBlockId === b.id) {
+                      return (
+                        <BlockEditRow
+                          key={b.id}
+                          block={b}
+                          projects={projects}
+                          onSave={handleBlockEdit}
+                          onCancel={() => setEditingBlockId(null)}
+                        />
+                      );
+                    }
+
+                    return (
+                      <div key={b.id} className="flex items-center gap-2 py-2.5 border-b border-[#1c1915] last:border-0">
+                        <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: bColor }} />
+                        <p className="font-mono text-xs text-[#f5f0e8] shrink-0">
+                          {minutesToTime(s)}–{minutesToTime(e)}
+                        </p>
+                        <p className="text-[#8b7d6b] text-xs truncate flex-1">
+                          {proj?.name || AREAS[bArea]?.label || bArea}
+                        </p>
+                        <button
+                          onClick={() => setEditingBlockId(b.id)}
+                          className="text-[#4a3f35] hover:text-[#c9a84c] text-sm transition-colors shrink-0 px-1"
+                          title="Editar bloque"
+                        >
+                          ✎
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           )}
 
