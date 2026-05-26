@@ -7,25 +7,27 @@ import { calcDayScore, areaMinutesFromBlocks } from '../../utils/scoring';
 import { formatTime, minutesToLabel, minutesToTime } from '../../utils/dateUtils';
 import { AREAS, MANDATORY_AREAS } from '../../data/areas';
 import ScoreRing from '../ui/ScoreRing';
-import ProgressBar from '../ui/ProgressBar';
-import AreaBadge from '../ui/AreaBadge';
 import EvidenceInline from '../ui/EvidenceInline';
 import AiChat from '../ui/AiChat';
 import { EvidenceForm } from '../ui/EvidenceInline';
 import api from '../../api/index.js';
 
 const AREA_MINS = { NEGOCIO: 300, SEGUNDA: 60, ESTUDIO: 180, EJERCICIO: 30 };
+const AREA_HEX  = {
+  NEGOCIO: '#3B82F6', SEGUNDA: '#A855F7', ESTUDIO: '#F59E0B',
+  EJERCICIO: '#10B981', OTROS: '#6B7280',
+};
 
 export default function Dashboard({ setNavScreen }) {
-  const now        = useCurrentTime();
-  const currentDay = useStore((s) => s.currentDay);
-  const config     = useStore((s) => s.config);
+  const now           = useCurrentTime();
+  const currentDay    = useStore((s) => s.currentDay);
+  const config        = useStore((s) => s.config);
   const setCurrentDay = useStore((s) => s.setCurrentDay);
-  const activeBlock = useActiveBlock();
+  const activeBlock   = useActiveBlock();
 
-  const [recentDays,    setRecentDays]    = useState([]);
-  const [showEvForm,    setShowEvForm]    = useState(false);
-  const [chatOpen,      setChatOpen]      = useState(false);
+  const [recentDays, setRecentDays] = useState([]);
+  const [showEvForm, setShowEvForm] = useState(false);
+  const [chatOpen,   setChatOpen]   = useState(false);
 
   useEffect(() => {
     api.get('/api/stats/history?days=7').then((r) => setRecentDays(r.data.data)).catch(() => {});
@@ -45,19 +47,25 @@ export default function Dashboard({ setNavScreen }) {
     setCurrentDay(r.data.data);
     setShowEvForm(false);
   }
-  const currentMins = now.getHours() * 60 + now.getMinutes();
+
+  const currentMins    = now.getHours() * 60 + now.getMinutes();
   const upcomingBlocks = (currentDay.blocks || [])
     .filter((b) => (b.start_minutes ?? b.startMinutes) > currentMins)
-    .slice(0, 3);
+    .slice(0, 4);
 
-  // Chart data
   const chartData = [...recentDays].reverse().map((d) => ({
     date:  d.date_key?.slice(5),
     score: d.score || 0,
   }));
 
-  // Urgent projects (deadline ≤ 5 days)
-  const urgentProjects = [];
+  const areaId         = activeBlock?.area_id || activeBlock?.area;
+  const activeAreaColor = AREA_HEX[areaId] || '#6B7280';
+  const activeStart    = activeBlock ? (activeBlock.start_minutes ?? activeBlock.startMinutes) : 0;
+  const activeEnd      = activeBlock ? (activeBlock.end_minutes   ?? activeBlock.endMinutes)   : 0;
+  const activeRemain   = activeBlock ? Math.max(0, activeEnd - currentMins) : 0;
+  const activeProgress = activeBlock && activeEnd > activeStart
+    ? Math.min(100, ((currentMins - activeStart) / (activeEnd - activeStart)) * 100)
+    : 0;
 
   async function handleCloseDay() {
     const { data } = await api.put(`/api/days/${currentDay.date_key}/phase`, { phase: 'close' });
@@ -70,148 +78,172 @@ export default function Dashboard({ setNavScreen }) {
 
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
-        <p className="text-[#6B7280] text-xs uppercase tracking-widest">
-          {currentDay.date_key?.toString().slice(0, 10)}
-        </p>
+        <div>
+          <p className="text-[#8b7d6b] text-xs uppercase tracking-widest">
+            {currentDay.date_key?.toString().slice(0, 10)}
+          </p>
+          {score > 0 && (
+            <p className="text-[#c9a84c] text-xs font-mono font-bold mt-0.5">{score} pts</p>
+          )}
+        </div>
         <button
           onClick={() => setChatOpen(v => !v)}
-          className="flex items-center gap-2 bg-[#101010] border border-[#2C2C2C] hover:border-white px-3 py-1.5 rounded-xl text-sm text-[#6B7280] hover:text-white transition-colors"
+          className="flex items-center gap-2 bg-[#1c1915] border border-[#2a2520] hover:border-[#c9a84c] px-3 py-1.5 rounded-xl text-sm text-[#8b7d6b] hover:text-[#c9a84c] transition-colors"
         >
-          <span className="text-white font-black text-base">✦</span>
+          <span className="text-[#c9a84c] font-black text-base">✦</span>
           <span className="font-medium">Coach IA</span>
         </button>
       </div>
 
-      {/* Phrase */}
+      {/* Daily phrase */}
       {currentDay.daily_phrase && (
-        <p className="italic text-[#6B7280] text-sm text-center mb-5 px-4">
+        <p className="text-[#c9a84c] italic text-sm text-center mb-5 px-4 opacity-75">
           "{currentDay.daily_phrase}"
         </p>
       )}
 
-      {/* ── Evidence inline section ─────────────────────────────── */}
+      {/* Pending evidence reminders */}
       <EvidenceInline />
 
       <div className="flex flex-col md:flex-row gap-4">
-        {/* ── Left column (40%) ──────────────────────────────────── */}
-        <div className="md:w-[40%] flex flex-col gap-3">
-          {/* Clock + active block */}
-          <div className="bg-[#101010] rounded-2xl p-4 border border-[#2C2C2C]">
-            <div className="flex items-center justify-between">
-              <div className="font-mono text-5xl font-black text-white tabular-nums">
-                {formatTime(now)}
+        {/* ── Left column (42%) ─────────────────────────────── */}
+        <div className="md:w-[42%] flex flex-col gap-3">
+
+          {/* Active block hero */}
+          {activeBlock ? (
+            <div
+              className="bg-[#12100e] rounded-2xl p-4 border border-[#2a2520] border-l-4"
+              style={{ borderLeftColor: activeAreaColor }}
+            >
+              <div className="flex items-start justify-between mb-3">
+                <div className="min-w-0">
+                  <p className="text-xs font-semibold uppercase tracking-wider mb-1"
+                     style={{ color: activeAreaColor }}>
+                    En curso
+                  </p>
+                  <p className="text-[#f5f0e8] font-bold text-base leading-tight truncate">
+                    {activeBlock.project_name || AREAS[areaId]?.label || '—'}
+                  </p>
+                  <p className="text-[#8b7d6b] text-xs font-mono mt-0.5">
+                    {minutesToTime(activeStart)}–{minutesToTime(activeEnd)}
+                  </p>
+                </div>
+                <div className="text-right shrink-0 ml-3">
+                  <p className="font-mono text-4xl font-black text-[#f5f0e8] tabular-nums leading-none">
+                    {formatTime(now)}
+                  </p>
+                  <p className="text-[#8b7d6b] text-xs mt-1">{minutesToLabel(activeRemain)} restantes</p>
+                </div>
               </div>
-              {activeBlock ? (
-                <div className="text-right">
-                  <p className="text-green-400 text-[10px] font-medium uppercase tracking-wider mb-0.5">
-                    Activo
-                  </p>
-                  <p className="text-white text-sm font-mono">
-                    {minutesToTime(activeBlock.start_minutes ?? activeBlock.startMinutes)}–
-                    {minutesToTime(activeBlock.end_minutes   ?? activeBlock.endMinutes)}
-                  </p>
-                  <AreaBadge area={activeBlock.area_id || activeBlock.area} />
-                </div>
-              ) : (
-                <p className="text-[#374151] text-sm">Sin bloque activo</p>
-              )}
-            </div>
 
-            {/* Time remaining in active block */}
-            {activeBlock && (() => {
-              const end    = activeBlock.end_minutes ?? activeBlock.endMinutes;
-              const remain = end - currentMins;
-              return remain > 0 ? (
-                <div className="mt-3 pt-3 border-t border-[#2C2C2C]">
-                  <div className="flex justify-between text-xs mb-1">
-                    <span className="text-[#6B7280]">Tiempo restante</span>
-                    <span className="text-white font-mono">{minutesToLabel(remain)}</span>
-                  </div>
-                  <div className="h-1 bg-[#222222] rounded-full overflow-hidden mb-3">
-                    <div
-                      className="h-full bg-green-400 rounded-full transition-all"
-                      style={{
-                        width: `${Math.max(0, 100 - (remain / ((activeBlock.end_minutes ?? activeBlock.endMinutes) - (activeBlock.start_minutes ?? activeBlock.startMinutes)) * 100))}%`,
-                      }}
-                    />
-                  </div>
-                  {(activeBlock.area_id || activeBlock.area) !== 'OTROS' && (
-                    activeBlockHasEvidence ? (
-                      <p className="text-green-400 text-xs font-bold text-center">✓ Evidencia enviada</p>
-                    ) : (
-                      <button
-                        onClick={() => setShowEvForm(v => !v)}
-                        className="w-full bg-[#1a1a1a] border border-[#2C2C2C] hover:border-white text-white text-xs font-bold py-2 rounded-xl transition-colors"
-                      >
-                        📎 Adjuntar evidencia
-                      </button>
-                    )
-                  )}
-                </div>
-              ) : null;
-            })()}
-
-            {showEvForm && activeBlock && !activeBlockHasEvidence && (
-              <div className="mt-3">
-                <EvidenceForm
-                  block={activeBlock}
-                  onSubmit={handleEvidenceSubmit}
-                  onCancel={() => setShowEvForm(false)}
+              <div className="h-1 bg-[#2a2520] rounded-full overflow-hidden mb-3">
+                <div
+                  className="h-full rounded-full transition-all"
+                  style={{ width: `${activeProgress}%`, backgroundColor: activeAreaColor }}
                 />
               </div>
-            )}
-          </div>
 
-          {/* Upcoming blocks */}
+              {areaId !== 'OTROS' && (
+                activeBlockHasEvidence ? (
+                  <p className="text-xs font-medium text-center py-2" style={{ color: activeAreaColor }}>
+                    ✓ Evidencia enviada
+                  </p>
+                ) : (
+                  <button
+                    onClick={() => setShowEvForm(v => !v)}
+                    className="w-full border text-xs font-semibold py-2.5 rounded-xl transition-colors"
+                    style={{
+                      borderColor: showEvForm ? activeAreaColor : '#2a2520',
+                      color: showEvForm ? activeAreaColor : '#8b7d6b',
+                      backgroundColor: '#1c1915',
+                    }}
+                  >
+                    {showEvForm ? '↑ Cerrar formulario' : '⊕ Adjuntar evidencia'}
+                  </button>
+                )
+              )}
+
+              {showEvForm && !activeBlockHasEvidence && (
+                <div className="mt-3">
+                  <EvidenceForm
+                    block={activeBlock}
+                    onSubmit={handleEvidenceSubmit}
+                    onCancel={() => setShowEvForm(false)}
+                  />
+                </div>
+              )}
+            </div>
+          ) : (
+            /* No active block */
+            <div className="bg-[#12100e] rounded-2xl p-4 border border-[#2a2520]">
+              <p className="text-[#4a3f35] text-xs uppercase tracking-wider mb-2">Hora actual</p>
+              <p className="font-mono text-5xl font-black text-[#f5f0e8] tabular-nums">
+                {formatTime(now)}
+              </p>
+              {upcomingBlocks.length > 0 ? (
+                <p className="text-[#8b7d6b] text-xs mt-2">
+                  Próximo: {minutesToTime(upcomingBlocks[0].start_minutes ?? upcomingBlocks[0].startMinutes)}
+                </p>
+              ) : (
+                <p className="text-[#4a3f35] text-xs mt-2">Sin bloques próximos</p>
+              )}
+            </div>
+          )}
+
+          {/* Upcoming blocks timeline */}
           {upcomingBlocks.length > 0 && (
-            <div className="bg-[#101010] rounded-2xl p-4 border border-[#2C2C2C]">
-              <p className="text-[10px] text-[#6B7280] uppercase tracking-widest mb-3">Próximos</p>
-              <div className="flex flex-col gap-2">
-                {upcomingBlocks.map((b) => (
-                  <div key={b.id} className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <span className="font-mono text-sm text-white">
+            <div className="bg-[#12100e] rounded-2xl p-4 border border-[#2a2520]">
+              <p className="text-[10px] text-[#8b7d6b] uppercase tracking-widest mb-3">Próximos bloques</p>
+              <div className="flex flex-col">
+                {upcomingBlocks.map((b) => {
+                  const bColor = AREA_HEX[b.area_id || b.area] || '#6B7280';
+                  return (
+                    <div key={b.id} className="flex items-center gap-3 py-2 border-b border-[#1c1915] last:border-0">
+                      <p className="font-mono text-sm text-[#f5f0e8] w-10 shrink-0">
                         {minutesToTime(b.start_minutes ?? b.startMinutes)}
-                      </span>
-                      <AreaBadge area={b.area_id || b.area} />
+                      </p>
+                      <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: bColor }} />
+                      <p className="text-[#a09585] text-sm truncate flex-1">
+                        {b.project_name || AREAS[b.area_id || b.area]?.label || '—'}
+                      </p>
+                      <p className="text-[#4a3f35] text-xs shrink-0">
+                        {minutesToLabel((b.end_minutes ?? b.endMinutes) - (b.start_minutes ?? b.startMinutes))}
+                      </p>
                     </div>
-                    <span className="text-[#6B7280] text-xs">
-                      {minutesToLabel((b.end_minutes ?? b.endMinutes) - (b.start_minutes ?? b.startMinutes))}
-                    </span>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           )}
 
-
-          {/* Close day button */}
+          {/* Close day */}
           <button
             onClick={handleCloseDay}
-            className="w-full bg-[#181818] border border-[#2C2C2C] text-[#6B7280] hover:text-white hover:border-white py-3 rounded-xl text-sm font-medium transition-colors"
+            className="w-full bg-[#1c1915] border border-[#2a2520] text-[#8b7d6b] hover:text-[#f5f0e8] hover:border-[#4a3f35] py-3 rounded-xl text-sm font-medium transition-colors"
           >
-            Cerrar día
+            Cerrar día →
           </button>
         </div>
 
-        {/* ── Right column (60%) ─────────────────────────────────── */}
-        <div className="md:w-[60%] flex flex-col gap-3">
-          {/* Score gauge */}
-          <div className="bg-[#101010] rounded-2xl p-4 border border-[#2C2C2C] flex items-center gap-6">
-            <ScoreRing score={score} max={100} size={110} />
+        {/* ── Right column (58%) ────────────────────────────── */}
+        <div className="md:w-[58%] flex flex-col gap-3">
+
+          {/* Score */}
+          <div className="bg-[#12100e] rounded-2xl p-4 border border-[#2a2520] flex items-center gap-5">
+            <ScoreRing score={score} max={100} size={100} />
             <div>
-              <p className="text-[#6B7280] text-xs uppercase tracking-widest mb-1">Score del día</p>
-              <p className="text-white text-4xl font-black font-mono">{score}</p>
-              <p className="text-[#6B7280] text-xs">/ 100 puntos</p>
+              <p className="text-[#8b7d6b] text-xs uppercase tracking-widest mb-1">Score del día</p>
+              <p className="text-[#c9a84c] text-4xl font-black font-mono">{score}</p>
+              <p className="text-[#4a3f35] text-xs">/ 100 puntos</p>
               {config && (
                 <div className="mt-3 flex flex-wrap gap-2">
-                  <span className="text-[10px] text-[#6B7280] bg-[#181818] px-2 py-0.5 rounded">
+                  <span className="text-[10px] text-[#8b7d6b] bg-[#1c1915] border border-[#2a2520] px-2 py-0.5 rounded">
                     UPS: {config.ups_used ? 0 : config.ups_total}
                   </span>
-                  <span className="text-[10px] text-[#6B7280] bg-[#181818] px-2 py-0.5 rounded">
+                  <span className="text-[10px] text-[#8b7d6b] bg-[#1c1915] border border-[#2a2520] px-2 py-0.5 rounded">
                     Esp: {config.special_days_total - config.special_days_used_count}
                   </span>
-                  <span className="text-[10px] text-[#6B7280] bg-[#181818] px-2 py-0.5 rounded">
+                  <span className="text-[10px] text-[#8b7d6b] bg-[#1c1915] border border-[#2a2520] px-2 py-0.5 rounded">
                     Rep: {config.replan_days_total - config.replan_days_used_count}
                   </span>
                 </div>
@@ -220,29 +252,30 @@ export default function Dashboard({ setNavScreen }) {
           </div>
 
           {/* Area minimums */}
-          <div className="bg-[#101010] rounded-2xl p-4 border border-[#2C2C2C]">
-            <p className="text-[10px] text-[#6B7280] uppercase tracking-widest mb-3">Mínimos del día</p>
+          <div className="bg-[#12100e] rounded-2xl p-4 border border-[#2a2520]">
+            <p className="text-[10px] text-[#8b7d6b] uppercase tracking-widest mb-3">Mínimos del día</p>
             <div className="flex flex-col gap-3">
               {MANDATORY_AREAS.map((id) => {
                 const area = AREAS[id];
                 const done = areaMins[id] || 0;
                 const ok   = done >= AREA_MINS[id];
+                const pct  = Math.min(100, (done / AREA_MINS[id]) * 100);
                 return (
                   <div key={id}>
-                    <div className="flex justify-between text-xs mb-1">
-                      <span className={ok ? 'text-green-400' : 'text-[#6B7280]'}>
+                    <div className="flex justify-between text-xs mb-1.5">
+                      <span className={ok ? 'text-[#c9a84c]' : 'text-[#8b7d6b]'}>
                         {ok ? '✓ ' : ''}{area.label}
                       </span>
-                      <span className={`font-mono ${ok ? 'text-green-400' : 'text-[#6B7280]'}`}>
+                      <span className={`font-mono ${ok ? 'text-[#c9a84c]' : 'text-[#4a3f35]'}`}>
                         {minutesToLabel(done)} / {minutesToLabel(AREA_MINS[id])}
                       </span>
                     </div>
-                    <ProgressBar
-                      value={done}
-                      max={AREA_MINS[id]}
-                      color={area.color}
-                      showText={false}
-                    />
+                    <div className="h-1 bg-[#2a2520] rounded-full overflow-hidden">
+                      <div
+                        className="h-full rounded-full transition-all"
+                        style={{ width: `${pct}%`, backgroundColor: ok ? '#c9a84c' : AREA_HEX[id] }}
+                      />
+                    </div>
                   </div>
                 );
               })}
@@ -251,23 +284,23 @@ export default function Dashboard({ setNavScreen }) {
 
           {/* 7-day chart */}
           {chartData.length > 0 && (
-            <div className="bg-[#101010] rounded-2xl p-4 border border-[#2C2C2C]">
-              <p className="text-[10px] text-[#6B7280] uppercase tracking-widest mb-3">Últimos 7 días</p>
-              <ResponsiveContainer width="100%" height={80}>
-                <BarChart data={chartData} barSize={16}>
-                  <XAxis dataKey="date" tick={{ fill: '#374151', fontSize: 10 }} axisLine={false} tickLine={false} />
+            <div className="bg-[#12100e] rounded-2xl p-4 border border-[#2a2520]">
+              <p className="text-[10px] text-[#8b7d6b] uppercase tracking-widest mb-3">Últimos 7 días</p>
+              <ResponsiveContainer width="100%" height={72}>
+                <BarChart data={chartData} barSize={14}>
+                  <XAxis dataKey="date" tick={{ fill: '#4a3f35', fontSize: 10 }} axisLine={false} tickLine={false} />
                   <YAxis domain={[0, 100]} hide />
                   <Tooltip
-                    contentStyle={{ background: '#181818', border: '1px solid #2C2C2C', borderRadius: 8 }}
-                    labelStyle={{ color: '#F0F0F0', fontSize: 11 }}
-                    itemStyle={{ color: '#F0F0F0', fontSize: 11 }}
+                    contentStyle={{ background: '#1c1915', border: '1px solid #2a2520', borderRadius: 8 }}
+                    labelStyle={{ color: '#f5f0e8', fontSize: 11 }}
+                    itemStyle={{ color: '#c9a84c', fontSize: 11 }}
                     formatter={(v) => [`${v} pts`]}
                   />
-                  <Bar dataKey="score" radius={4}>
+                  <Bar dataKey="score" radius={3}>
                     {chartData.map((d, i) => (
                       <Cell
                         key={i}
-                        fill={d.score >= 70 ? '#10B981' : d.score >= 40 ? '#F59E0B' : '#EF4444'}
+                        fill={d.score >= 70 ? '#c9a84c' : d.score >= 40 ? '#7a8c4f' : '#8c3040'}
                       />
                     ))}
                   </Bar>
