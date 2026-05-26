@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,700;0,9..40,900;1,9..40,400&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=Crimson+Text:ital,wght@0,400;0,600;1,400;1,600&family=JetBrains+Mono:wght@400;700;800&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -15,25 +15,27 @@
 * { box-sizing: border-box; }
 
 body {
-  font-family: 'DM Sans', sans-serif;
-  background-color: #0c0a09;
-  color: #f5f0e8;
+  font-family: 'Crimson Text', Georgia, serif;
+  background-color: #0a0806;
+  color: #f0e6d0;
   -webkit-font-smoothing: antialiased;
   -webkit-tap-highlight-color: transparent;
+  font-size: 17px;
+  line-height: 1.55;
 }
 
-/* Custom scrollbar */
+/* Scrollbar */
 ::-webkit-scrollbar { width: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: #2a2520; border-radius: 2px; }
+::-webkit-scrollbar-thumb { background: #3a2e22; border-radius: 2px; }
 
-/* Range input */
+/* Range input — gold thumb */
 input[type="range"] {
   -webkit-appearance: none;
   appearance: none;
-  height: 4px;
+  height: 3px;
   border-radius: 2px;
-  background: #222222;
+  background: #3a2e22;
   outline: none;
 }
 input[type="range"]::-webkit-slider-thumb {
@@ -41,6 +43,11 @@ input[type="range"]::-webkit-slider-thumb {
   width: 16px;
   height: 16px;
   border-radius: 50%;
-  background: white;
+  background: #c9a254;
   cursor: pointer;
+  border: 2px solid #0a0806;
+  box-shadow: 0 0 6px rgba(201,162,84,0.4);
 }
+
+/* Cinzel utility (used on headings/labels throughout) */
+.font-cinzel { font-family: 'Cinzel', serif; }

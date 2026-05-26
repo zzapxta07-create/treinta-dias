@@ -19,25 +19,56 @@ export default function DayLost() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-[#080808] px-6 text-center">
-      <div className="text-7xl font-black text-red-500 tracking-widest mb-4 leading-none">
-        DÍA<br />PERDIDO
+    <div className="min-h-screen flex flex-col items-center justify-center bg-[#0a0806] px-6 text-center">
+      <div className="fixed inset-0 pointer-events-none"
+        style={{ background: 'radial-gradient(ellipse at center, transparent 20%, rgba(0,0,0,0.8) 100%)' }} />
+
+      <div className="relative">
+        {/* Broken crest */}
+        <div className="inline-flex items-center justify-center w-20 h-20 rounded-full border border-[#8b1a2a]/40 bg-[#8b1a2a]/08 mb-6"
+          style={{ backgroundColor: 'rgba(139,26,42,0.08)' }}>
+          <span className="text-[#8b1a2a] text-3xl">✕</span>
+        </div>
+
+        <p className="font-cinzel text-[9px] text-[#5a4838] tracking-[0.5em] uppercase mb-3">
+          {currentDay?.date_key?.toString().slice(0, 10)}
+        </p>
+
+        <h1 className="font-cinzel text-4xl font-bold text-[#8b1a2a] tracking-[0.1em] leading-tight mb-2">
+          DIES<br />AMISSUS
+        </h1>
+
+        <div className="flex items-center gap-3 my-4 px-8">
+          <div className="flex-1 h-px bg-[#8b1a2a]/30" />
+          <span className="text-[#8b1a2a]/50 text-xs">◆</span>
+          <div className="flex-1 h-px bg-[#8b1a2a]/30" />
+        </div>
+
+        <p className="font-cinzel text-[9px] text-[#5a4838] tracking-[0.3em] uppercase mb-2">
+          Día Perdido
+        </p>
+
+        {/* Penalty card */}
+        <div className="bg-[#110d0a] rounded-lg p-5 mb-8 max-w-xs w-full border border-[#8b1a2a]/30 mx-auto">
+          <p className="font-cinzel text-[9px] text-[#5a4838] tracking-[0.2em] uppercase mb-2">
+            Penalización Aplicada
+          </p>
+          <p className="font-mono text-[#8b1a2a] text-4xl font-black">−150 pts</p>
+        </div>
+
+        <p className="text-[#9a8470] text-sm max-w-sm leading-relaxed mb-8">
+          El ritual del alba no fue completado a tiempo. El caballero no puede registrar nada hoy.
+          Mañana a las 7am la fortaleza abrirá sus puertas de nuevo.
+        </p>
+
+        <button
+          onClick={handleRecover}
+          disabled={recovering}
+          className="font-cinzel text-[9px] text-[#5a4838] tracking-widest uppercase hover:text-[#9a8470] transition-colors disabled:opacity-50"
+        >
+          {recovering ? 'Recuperando...' : 'Recuperar día (error de temporizador)'}
+        </button>
       </div>
-      <p className="text-[#6B7280] mb-6">{currentDay?.date_key?.toString().slice(0, 10)}</p>
-      <div className="bg-[#181818] rounded-2xl p-6 mb-8 max-w-xs w-full border border-[#2C2C2C]">
-        <p className="text-[#6B7280] text-sm mb-1">Penalización aplicada</p>
-        <p className="text-red-400 text-4xl font-black font-mono">−150 pts</p>
-      </div>
-      <p className="text-[#6B7280] text-sm max-w-sm leading-relaxed mb-8">
-        No podés registrar nada hoy. Mañana a partir de las 7am podés volver a empezar.
-      </p>
-      <button
-        onClick={handleRecover}
-        disabled={recovering}
-        className="text-[#6B7280] text-xs underline hover:text-[#F0F0F0] transition-colors disabled:opacity-50"
-      >
-        {recovering ? 'Recuperando...' : 'Recuperar día (error de timer)'}
-      </button>
     </div>
   );
 }

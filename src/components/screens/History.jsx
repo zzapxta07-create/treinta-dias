@@ -13,9 +13,9 @@ const RANGE_OPTIONS = [
 ];
 
 function scoreColor(s) {
-  if (s >= 70) return '#22c55e';
-  if (s >= 40) return '#eab308';
-  return '#ef4444';
+  if (s >= 70) return '#c9a254';
+  if (s >= 40) return '#9a8470';
+  return '#8b1a2a';
 }
 
 const AREA_COLORS = {
@@ -28,8 +28,8 @@ const AREA_COLORS = {
 function CustomTooltip({ active, payload, label }) {
   if (!active || !payload?.length) return null;
   return (
-    <div className="bg-[#1a1a1a] border border-[#2C2C2C] rounded-lg px-3 py-2 text-xs">
-      <p className="text-[#6B7280] mb-1">{label}</p>
+    <div className="bg-[#110d0a] border border-[#3a2e22] rounded px-3 py-2 text-xs">
+      <p className="font-cinzel text-[#5a4838] mb-1 tracking-widest">{label}</p>
       {payload.map((p, i) => (
         <p key={i} style={{ color: p.color || p.fill }}>{p.name}: {p.value}</p>
       ))}
@@ -37,14 +37,12 @@ function CustomTooltip({ active, payload, label }) {
   );
 }
 
-// ── Day Detail Modal ──────────────────────────────────────────────────────────
-
 function BlockDetail({ block, evidence }) {
   const [imgOpen, setImgOpen] = useState(false);
   const areaColor = {
     NEGOCIO: 'border-blue-500', SEGUNDA: 'border-purple-500',
-    ESTUDIO: 'border-yellow-500', EJERCICIO: 'border-green-500', OTROS: 'border-gray-600',
-  }[block.area_id] || 'border-gray-600';
+    ESTUDIO: 'border-yellow-500', EJERCICIO: 'border-green-500', OTROS: 'border-[#3a2e22]',
+  }[block.area_id] || 'border-[#3a2e22]';
 
   const dur = block.end_minutes - block.start_minutes;
   const durLabel = dur >= 60
@@ -53,36 +51,36 @@ function BlockDetail({ block, evidence }) {
   const t = (m) => `${Math.floor(m/60)}:${String(m%60).padStart(2,'0')}`;
 
   return (
-    <div className={`bg-[#0d0d0d] rounded-xl border-l-4 ${areaColor} border border-[#2C2C2C] p-3 mb-2`}>
+    <div className={`bg-[#0a0806] rounded border-l-4 ${areaColor} border border-[#3a2e22] p-3 mb-2`}>
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
-          <p className="text-white text-sm font-medium truncate">
+          <p className="text-[#f0e6d0] text-sm truncate">
             {block.project_name || AREAS[block.area_id]?.label || block.area_id}
           </p>
-          <p className="text-[#6B7280] text-xs">{t(block.start_minutes)}–{t(block.end_minutes)} · {durLabel}</p>
+          <p className="font-mono text-[#5a4838] text-xs">{t(block.start_minutes)}–{t(block.end_minutes)} · {durLabel}</p>
         </div>
-        <span className={`text-xs font-bold shrink-0 px-2 py-0.5 rounded-md ${
-          !evidence              ? 'bg-[#222] text-[#6B7280]'      :
-          evidence.no_hice      ? 'bg-red-900 text-red-400'        :
-                                  'bg-green-900 text-green-400'
+        <span className={`font-cinzel text-[8px] tracking-[0.08em] uppercase shrink-0 px-2 py-0.5 rounded ${
+          !evidence              ? 'bg-[#1a1410] text-[#5a4838] border border-[#3a2e22]' :
+          evidence.no_hice      ? 'bg-[#8b1a2a]/15 text-[#8b1a2a] border border-[#8b1a2a]/30' :
+                                  'bg-[#c9a254]/15 text-[#c9a254] border border-[#c9a254]/30'
         }`}>
           {!evidence ? 'Sin evidencia' : evidence.no_hice ? 'No hice' : '✓ Hecho'}
         </span>
       </div>
 
       {evidence && !evidence.no_hice && (
-        <div className="mt-2 pt-2 border-t border-[#1a1a1a]">
+        <div className="mt-2 pt-2 border-t border-[#1a1410]">
           {evidence.q1 && (
-            <p className="text-[#F0F0F0] text-xs leading-relaxed mb-2">"{evidence.q1}"</p>
+            <p className="text-[#9a8470] text-xs leading-relaxed mb-2 italic">"{evidence.q1}"</p>
           )}
           <div className="flex items-center gap-3">
             {evidence.focus_level && (
-              <span className="text-[#6B7280] text-xs">
-                Foco: <span className="text-white font-mono font-bold">{evidence.focus_level}/10</span>
+              <span className="text-[#5a4838] text-xs">
+                Foco: <span className="font-mono text-[#c9a254] font-bold">{evidence.focus_level}/10</span>
               </span>
             )}
             {evidence.photo_data && (
-              <button onClick={() => setImgOpen(true)} className="text-xs text-blue-400 underline">
+              <button onClick={() => setImgOpen(true)} className="font-cinzel text-[9px] text-[#c9a254]/70 hover:text-[#c9a254] transition-colors uppercase tracking-widest">
                 Ver foto
               </button>
             )}
@@ -91,14 +89,14 @@ function BlockDetail({ block, evidence }) {
       )}
 
       {evidence?.no_hice && evidence.reason && (
-        <p className="text-[#6B7280] text-xs mt-1 italic">"{evidence.reason}"</p>
+        <p className="text-[#9a8470] text-xs mt-1 italic">"{evidence.reason}"</p>
       )}
 
       {imgOpen && evidence?.photo_data && (
         <div className="fixed inset-0 z-[100] bg-black/90 flex items-center justify-center p-4"
           onClick={() => setImgOpen(false)}>
           <img src={evidence.photo_data} alt="evidencia"
-            className="max-w-full max-h-[80vh] rounded-xl object-contain" />
+            className="max-w-full max-h-[80vh] rounded object-contain" />
         </div>
       )}
     </div>
@@ -116,48 +114,51 @@ function DayDetail({ dateKey, onClose }) {
        .finally(() => setLoading(false));
   }, [dateKey]);
 
-  const statusColor = day?.status === 'complete' ? 'bg-green-900 text-green-400'
-    : day?.status === 'lost' ? 'bg-red-900 text-red-400' : 'bg-[#222] text-[#6B7280]';
+  const statusColor = day?.status === 'complete'
+    ? 'bg-[#c9a254]/15 text-[#c9a254] border border-[#c9a254]/30'
+    : day?.status === 'lost'
+    ? 'bg-[#8b1a2a]/15 text-[#8b1a2a] border border-[#8b1a2a]/30'
+    : 'bg-[#1a1410] text-[#5a4838] border border-[#3a2e22]';
   const statusLabel = day?.status === 'complete' ? 'Completo'
     : day?.status === 'lost' ? 'Perdido' : 'Parcial';
 
   return (
     <div className="fixed inset-0 z-50 bg-black/80 flex items-end md:items-center justify-center p-0 md:p-4"
       onClick={onClose}>
-      <div className="bg-[#0a0a0a] border border-[#2C2C2C] rounded-t-2xl md:rounded-2xl w-full md:max-w-lg max-h-[85vh] flex flex-col overflow-hidden"
+      <div className="bg-[#0a0806] border border-[#3a2e22] rounded-t-xl md:rounded-xl w-full md:max-w-lg max-h-[85vh] flex flex-col overflow-hidden"
         onClick={e => e.stopPropagation()}>
 
-        <div className="flex items-center justify-between px-4 py-3 border-b border-[#1a1a1a] shrink-0">
+        <div className="flex items-center justify-between px-4 py-3 border-b border-[#1a1410] shrink-0">
           <div>
-            <p className="text-white font-black">{dateKey}</p>
+            <p className="font-cinzel text-[#f0e6d0] font-bold tracking-[0.05em]">{dateKey}</p>
             {day && (
               <div className="flex items-center gap-2 mt-0.5">
-                <span className="text-white font-mono font-bold text-sm">{day.score ?? '—'} pts</span>
-                <span className={`text-xs font-bold px-2 py-0.5 rounded-md ${statusColor}`}>{statusLabel}</span>
+                <span className="font-mono text-[#c9a254] font-bold text-sm">{day.score ?? '—'} pts</span>
+                <span className={`font-cinzel text-[8px] tracking-[0.08em] uppercase px-2 py-0.5 rounded ${statusColor}`}>{statusLabel}</span>
                 {day.emotional_state && (
-                  <span className="text-[#6B7280] text-xs">Emoc: {day.emotional_state}/10</span>
+                  <span className="text-[#5a4838] text-xs">Espíritu: {day.emotional_state}/10</span>
                 )}
               </div>
             )}
           </div>
-          <button onClick={onClose} className="text-[#6B7280] hover:text-white text-xl leading-none">✕</button>
+          <button onClick={onClose} className="text-[#5a4838] hover:text-[#f0e6d0] text-xl leading-none transition-colors">✕</button>
         </div>
 
         <div className="flex-1 overflow-y-auto px-4 py-3">
-          {loading && <p className="text-[#6B7280] text-sm text-center py-8">Cargando...</p>}
-          {!loading && !day && <p className="text-[#6B7280] text-sm text-center py-8">Sin datos.</p>}
+          {loading && <p className="font-cinzel text-[#5a4838] text-xs text-center py-8 tracking-widest">Cargando crónica...</p>}
+          {!loading && !day && <p className="text-[#5a4838] text-sm text-center py-8">Sin datos.</p>}
           {!loading && day && (
             <>
               {day.daily_phrase && (
-                <p className="italic text-[#6B7280] text-xs text-center mb-4">"{day.daily_phrase}"</p>
+                <p className="italic text-[#9a8470] text-xs text-center mb-4">"{day.daily_phrase}"</p>
               )}
 
-              <p className="text-xs text-[#6B7280] uppercase tracking-wider mb-3">
+              <p className="font-cinzel text-[8px] text-[#5a4838] uppercase tracking-[0.25em] mb-3">
                 Bloques ({(day.blocks || []).length})
               </p>
 
               {(day.blocks || []).length === 0 && (
-                <p className="text-[#6B7280] text-xs text-center py-4">Sin bloques.</p>
+                <p className="text-[#5a4838] text-xs text-center py-4">Sin bloques.</p>
               )}
 
               {[...(day.blocks || [])]
@@ -173,8 +174,6 @@ function DayDetail({ dateKey, onClose }) {
     </div>
   );
 }
-
-// ── Main ──────────────────────────────────────────────────────────────────────
 
 export default function History() {
   const [days,      setDays]      = useState([]);
@@ -205,19 +204,21 @@ export default function History() {
 
   return (
     <div className="px-4 py-6 max-w-2xl mx-auto pb-24">
-      <div className="mb-5">
-        <p className="text-xs text-[#374151] text-center">
-          ✦ Usá el chat IA para pedir un resumen semanal o análisis de historial
-        </p>
-      </div>
-
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-xl font-black">Historial</h1>
+      {/* Header */}
+      <div className="flex items-center justify-between mb-5">
+        <div>
+          <p className="font-cinzel text-[9px] text-[#5a4838] tracking-[0.3em] uppercase mb-1">
+            Archivo Permanente
+          </p>
+          <h1 className="font-cinzel text-2xl font-bold text-[#f0e6d0] tracking-[0.06em]">Crónicas</h1>
+        </div>
         <div className="flex gap-1">
           {RANGE_OPTIONS.map((opt) => (
             <button key={opt.value} onClick={() => setRange(opt.value)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors ${
-                range === opt.value ? 'bg-white text-black' : 'bg-[#181818] text-[#6B7280] hover:text-white'
+              className={`font-cinzel text-[9px] tracking-[0.1em] uppercase px-3 py-1.5 rounded transition-colors ${
+                range === opt.value
+                  ? 'bg-[#c9a254]/15 text-[#c9a254] border border-[#c9a254]/30'
+                  : 'bg-[#110d0a] text-[#5a4838] border border-[#3a2e22] hover:text-[#9a8470]'
               }`}>
               {opt.label}
             </button>
@@ -225,20 +226,29 @@ export default function History() {
         </div>
       </div>
 
+      <div className="flex items-center gap-3 mb-6">
+        <div className="flex-1 h-px bg-[#3a2e22]" />
+        <span className="text-[#5a4838] text-xs">◆</span>
+        <div className="flex-1 h-px bg-[#3a2e22]" />
+      </div>
+
       {loading ? (
-        <div className="text-[#6B7280] text-sm text-center py-12">Cargando...</div>
+        <div className="font-cinzel text-[#5a4838] text-xs text-center py-12 tracking-widest uppercase">
+          Consultando el archivo...
+        </div>
       ) : days.length === 0 ? (
-        <div className="text-[#6B7280] text-sm text-center py-12">Sin datos aún.</div>
+        <div className="text-[#5a4838] text-sm text-center py-12">Sin datos aún.</div>
       ) : (
         <>
-          <div className="bg-[#101010] rounded-2xl p-4 mb-4 border border-[#2C2C2C]">
-            <p className="text-xs text-[#6B7280] mb-3 uppercase tracking-wider">Score por día</p>
+          {/* Score chart */}
+          <div className="bg-[#110d0a] rounded-lg p-4 mb-4 border border-[#3a2e22]">
+            <p className="font-cinzel text-[8px] text-[#5a4838] mb-3 uppercase tracking-[0.25em]">Score por Jornada</p>
             <ResponsiveContainer width="100%" height={140}>
               <BarChart data={scoreData} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
-                <XAxis dataKey="date" tick={{ fill: '#6B7280', fontSize: 10 }} axisLine={false} tickLine={false} interval="preserveStartEnd" />
-                <YAxis domain={[0, 100]} tick={{ fill: '#6B7280', fontSize: 10 }} axisLine={false} tickLine={false} />
+                <XAxis dataKey="date" tick={{ fill: '#5a4838', fontSize: 10 }} axisLine={false} tickLine={false} interval="preserveStartEnd" />
+                <YAxis domain={[0, 100]} tick={{ fill: '#5a4838', fontSize: 10 }} axisLine={false} tickLine={false} />
                 <Tooltip content={<CustomTooltip />} />
-                <Bar dataKey="score" radius={[3, 3, 0, 0]} name="Score">
+                <Bar dataKey="score" radius={[2, 2, 0, 0]} name="Score">
                   {scoreData.map((entry, i) => <Cell key={i} fill={scoreColor(entry.score)} />)}
                 </Bar>
               </BarChart>
@@ -246,30 +256,30 @@ export default function History() {
           </div>
 
           {emotionData.length > 1 && (
-            <div className="bg-[#101010] rounded-2xl p-4 mb-4 border border-[#2C2C2C]">
-              <p className="text-xs text-[#6B7280] mb-3 uppercase tracking-wider">Estado emocional</p>
+            <div className="bg-[#110d0a] rounded-lg p-4 mb-4 border border-[#3a2e22]">
+              <p className="font-cinzel text-[8px] text-[#5a4838] mb-3 uppercase tracking-[0.25em]">Estado del Espíritu</p>
               <ResponsiveContainer width="100%" height={100}>
                 <LineChart data={emotionData} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
-                  <XAxis dataKey="date" tick={{ fill: '#6B7280', fontSize: 10 }} axisLine={false} tickLine={false} interval="preserveStartEnd" />
-                  <YAxis domain={[1, 10]} tick={{ fill: '#6B7280', fontSize: 10 }} axisLine={false} tickLine={false} />
+                  <XAxis dataKey="date" tick={{ fill: '#5a4838', fontSize: 10 }} axisLine={false} tickLine={false} interval="preserveStartEnd" />
+                  <YAxis domain={[1, 10]} tick={{ fill: '#5a4838', fontSize: 10 }} axisLine={false} tickLine={false} />
                   <Tooltip content={<CustomTooltip />} />
-                  <Line type="monotone" dataKey="value" stroke="#a78bfa" strokeWidth={2} dot={false} name="Estado" />
+                  <Line type="monotone" dataKey="value" stroke="#9a8470" strokeWidth={2} dot={false} name="Estado" />
                 </LineChart>
               </ResponsiveContainer>
             </div>
           )}
 
           {areaData.length > 1 && (
-            <div className="bg-[#101010] rounded-2xl p-4 mb-4 border border-[#2C2C2C]">
-              <p className="text-xs text-[#6B7280] mb-3 uppercase tracking-wider">Horas por área</p>
+            <div className="bg-[#110d0a] rounded-lg p-4 mb-4 border border-[#3a2e22]">
+              <p className="font-cinzel text-[8px] text-[#5a4838] mb-3 uppercase tracking-[0.25em]">Horas por Área</p>
               <ResponsiveContainer width="100%" height={120}>
                 <AreaChart data={areaData} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
-                  <XAxis dataKey="date" tick={{ fill: '#6B7280', fontSize: 10 }} axisLine={false} tickLine={false} interval="preserveStartEnd" />
-                  <YAxis tick={{ fill: '#6B7280', fontSize: 10 }} axisLine={false} tickLine={false} />
+                  <XAxis dataKey="date" tick={{ fill: '#5a4838', fontSize: 10 }} axisLine={false} tickLine={false} interval="preserveStartEnd" />
+                  <YAxis tick={{ fill: '#5a4838', fontSize: 10 }} axisLine={false} tickLine={false} />
                   <Tooltip content={<CustomTooltip />} />
                   {Object.entries(AREA_COLORS).map(([a, color]) => (
                     <Area key={a} type="monotone" dataKey={a} stackId="1"
-                      stroke={color} fill={color} fillOpacity={0.5} name={AREAS[a]?.label || a} />
+                      stroke={color} fill={color} fillOpacity={0.4} name={AREAS[a]?.label || a} />
                   ))}
                 </AreaChart>
               </ResponsiveContainer>
@@ -277,43 +287,43 @@ export default function History() {
                 {Object.entries(AREA_COLORS).map(([a, color]) => (
                   <div key={a} className="flex items-center gap-1.5">
                     <div className="w-2 h-2 rounded-full" style={{ backgroundColor: color }} />
-                    <span className="text-xs text-[#6B7280]">{AREAS[a]?.label || a}</span>
+                    <span className="font-cinzel text-[8px] text-[#5a4838] uppercase tracking-widest">{AREAS[a]?.label || a}</span>
                   </div>
                 ))}
               </div>
             </div>
           )}
 
-          {/* Days table — tap row to open detail */}
-          <div className="bg-[#101010] rounded-2xl border border-[#2C2C2C] overflow-hidden">
-            <div className="grid grid-cols-4 px-4 py-2 text-xs text-[#374151] uppercase tracking-wider border-b border-[#2C2C2C]">
+          {/* Days table */}
+          <div className="bg-[#110d0a] rounded-lg border border-[#3a2e22] overflow-hidden">
+            <div className="grid grid-cols-4 px-4 py-2.5 font-cinzel text-[8px] text-[#5a4838] uppercase tracking-[0.2em] border-b border-[#3a2e22]">
               <span>Fecha</span>
               <span className="text-center">Score</span>
               <span className="text-center">Estado</span>
-              <span className="text-right">Emoc.</span>
+              <span className="text-right">Espíritu</span>
             </div>
-            <div className="divide-y divide-[#1a1a1a]">
+            <div className="divide-y divide-[#1a1410]">
               {days.map((d) => (
                 <button
                   key={d.date_key}
                   onClick={() => setDetailKey(d.date_key)}
-                  className="w-full grid grid-cols-4 px-4 py-2.5 text-sm items-center hover:bg-[#181818] transition-colors"
+                  className="w-full grid grid-cols-4 px-4 py-2.5 text-sm items-center hover:bg-[#1a1410] transition-colors"
                 >
-                  <span className="text-[#6B7280] font-mono text-xs text-left">{d.date_key.slice(5)}</span>
+                  <span className="font-mono text-[#9a8470] text-xs text-left">{d.date_key.slice(5)}</span>
                   <span className="text-center font-mono font-bold"
-                    style={{ color: d.score ? scoreColor(d.score) : '#374151' }}>
+                    style={{ color: d.score ? scoreColor(d.score) : '#3a2e22' }}>
                     {d.score ?? '—'}
                   </span>
                   <span className="text-center">
-                    <span className={`text-xs font-bold px-2 py-0.5 rounded-md ${
-                      d.status === 'complete' ? 'bg-green-900 text-green-400' :
-                      d.status === 'lost'     ? 'bg-red-900 text-red-400'    :
-                                               'bg-[#222] text-[#6B7280]'
+                    <span className={`font-cinzel text-[8px] tracking-[0.08em] uppercase px-2 py-0.5 rounded ${
+                      d.status === 'complete' ? 'bg-[#c9a254]/15 text-[#c9a254]' :
+                      d.status === 'lost'     ? 'bg-[#8b1a2a]/15 text-[#8b1a2a]' :
+                                               'text-[#5a4838]'
                     }`}>
                       {d.status === 'complete' ? 'OK' : d.status === 'lost' ? 'Perdido' : 'En curso'}
                     </span>
                   </span>
-                  <span className="text-right text-[#6B7280] font-mono text-xs">
+                  <span className="text-right font-mono text-[#5a4838] text-xs">
                     {d.emotional_state ?? '—'}
                   </span>
                 </button>

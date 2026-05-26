@@ -3,12 +3,26 @@ export default {
   content: ["./index.html", "./src/**/*.{js,jsx}"],
   theme: {
     extend: {
+      fontFamily: {
+        cinzel:  ['Cinzel', 'serif'],
+        crimson: ['"Crimson Text"', 'Georgia', 'serif'],
+        mono:    ['"JetBrains Mono"', 'monospace'],
+      },
       colors: {
-        dark: { 900: "#0a0a0a", 800: "#111111", 700: "#1a1a1a", 600: "#222222", 500: "#2a2a2a", 400: "#333333" },
-        accent: { green: "#22c55e", yellow: "#eab308", red: "#ef4444", blue: "#3b82f6" },
+        stone:      '#0a0806',
+        wood:       '#110d0a',
+        panel:      '#1a1410',
+        card:       '#201a14',
+        border:     '#3a2e22',
+        parchment:  '#f0e6d0',
+        gold:       '#c9a254',
+        'gold-dim': '#7a6030',
+        warm:       '#9a8470',
+        dim:        '#5a4838',
+        crimson:    '#8b1a2a',
+        forest:     '#2d5a3d',
       },
     },
   },
   plugins: [],
 };
-

@@ -7,6 +7,16 @@ import api from '../../api/index.js';
 
 const AREA_MINS = { NEGOCIO: 300, SEGUNDA: 60, ESTUDIO: 180, EJERCICIO: 30 };
 
+function SectionTitle({ children }) {
+  return (
+    <div className="flex items-center gap-3 mb-3">
+      <div className="flex-1 h-px bg-[#3a2e22]" />
+      <p className="font-cinzel text-[8px] text-[#5a4838] uppercase tracking-[0.25em] shrink-0">{children}</p>
+      <div className="flex-1 h-px bg-[#3a2e22]" />
+    </div>
+  );
+}
+
 export default function DayPlanner() {
   const currentDay    = useStore((s) => s.currentDay);
   const setCurrentDay = useStore((s) => s.setCurrentDay);
@@ -27,6 +37,7 @@ export default function DayPlanner() {
     }
     return acc;
   }, { NEGOCIO: 0, SEGUNDA: 0, ESTUDIO: 0, EJERCICIO: 0 });
+
   const isSpecial = currentDay?.is_special_day;
   const canActivateSpecial = config && !isSpecial &&
     (config.special_days_total - config.special_days_used_count) > 0;
@@ -35,7 +46,6 @@ export default function DayPlanner() {
     api.get('/api/projects').then((r) => setProjects(r.data.data)).catch(() => {});
   }, []);
 
-  // Keep local blocks synced with store
   useEffect(() => {
     setBlocks(currentDay?.blocks || []);
   }, [currentDay?.id]);
@@ -57,11 +67,11 @@ export default function DayPlanner() {
     setSaving(true);
     try {
       const payload = {
-        day_id:       currentDay.id,
-        area_id:      form.area,
-        project_id:   form.projectId ? parseInt(form.projectId) : null,
-        start_time:   form.start,
-        end_time:     form.end,
+        day_id:        currentDay.id,
+        area_id:       form.area,
+        project_id:    form.projectId ? parseInt(form.projectId) : null,
+        start_time:    form.start,
+        end_time:      form.end,
         start_minutes: startM,
         end_minutes:   endM,
         sort_order:    blocks.length,
@@ -122,9 +132,9 @@ export default function DayPlanner() {
 
   const areaProjects = projects.filter((p) => p.area_id === form.area && !p.archived);
 
-  // ── Timeline visual ──────────────────────────────────────────────────────
-  const TIMELINE_START = 6 * 60;  // 06:00
-  const TIMELINE_END   = 24 * 60; // 24:00
+  // Timeline
+  const TIMELINE_START = 6 * 60;
+  const TIMELINE_END   = 24 * 60;
   const TIMELINE_RANGE = TIMELINE_END - TIMELINE_START;
 
   function toPercent(mins) {
@@ -136,31 +146,33 @@ export default function DayPlanner() {
 
   const AREA_HEX = {
     NEGOCIO: '#3B82F6', SEGUNDA: '#A855F7', ESTUDIO: '#F59E0B',
-    EJERCICIO: '#10B981', OTROS: '#6B7280',
+    EJERCICIO: '#10B981', OTROS: '#9a8470',
   };
 
   return (
     <div className="min-h-screen px-4 py-6 max-w-2xl mx-auto pb-28">
-      <h1 className="text-xl font-black mb-1">Planificar Hoy</h1>
-      <p className="text-[#6B7280] text-sm mb-5">
-        {currentDay?.date_key?.toString().slice(0, 10)} — Creá los bloques del día.
+      {/* Header */}
+      <p className="font-cinzel text-[9px] text-[#5a4838] tracking-[0.3em] uppercase mb-1">
+        {currentDay?.date_key?.toString().slice(0, 10)}
       </p>
+      <h1 className="font-cinzel text-2xl font-bold text-[#f0e6d0] tracking-[0.06em] mb-1">
+        Planificar el Día
+      </h1>
+      <p className="text-[#5a4838] text-sm mb-6">Establece los bloques de trabajo para la jornada.</p>
 
-      {/* Minimums tracker */}
-      <div className="bg-[#101010] rounded-2xl p-4 mb-4 border border-[#2C2C2C]">
-        <p className="text-[10px] text-[#6B7280] mb-3 uppercase tracking-widest">
-          {isSpecial ? 'Día Especial — mínimos libres' : 'Mínimos obligatorios'}
-        </p>
-        <div className="grid grid-cols-2 gap-x-6 gap-y-1.5">
+      {/* Minimums */}
+      <div className="bg-[#110d0a] rounded-lg p-4 mb-4 border border-[#3a2e22]">
+        <SectionTitle>{isSpecial ? 'Día Especial — mínimos libres' : 'Mínimos Obligatorios'}</SectionTitle>
+        <div className="grid grid-cols-2 gap-x-6 gap-y-2">
           {MANDATORY_AREAS.map((id) => {
             const done = areaMins[id] || 0;
             const ok   = isSpecial || done >= AREA_MINS[id];
             return (
-              <div key={id} className="flex justify-between items-center text-xs">
-                <span className={ok ? 'text-green-400' : 'text-[#6B7280]'}>
-                  {ok ? '✓' : '✗'} {AREAS[id].label.split(' ')[0]}
+              <div key={id} className="flex justify-between items-center">
+                <span className={`text-xs ${ok ? 'text-[#c9a254]' : 'text-[#5a4838]'}`}>
+                  {ok ? '✓' : '◦'} {AREAS[id].label.split(' ')[0]}
                 </span>
-                <span className={`font-mono ${ok ? 'text-green-400' : 'text-red-400'}`}>
+                <span className={`font-mono text-xs ${ok ? 'text-[#c9a254]' : 'text-[#8b1a2a]'}`}>
                   {minutesToLabel(done)}/{minutesToLabel(AREA_MINS[id])}
                 </span>
               </div>
@@ -168,7 +180,8 @@ export default function DayPlanner() {
           })}
         </div>
         {canActivateSpecial && (
-          <button onClick={activateSpecialDay} className="mt-3 text-xs text-yellow-400 underline">
+          <button onClick={activateSpecialDay}
+            className="mt-3 font-cinzel text-[9px] tracking-widest uppercase text-[#c9a254]/70 hover:text-[#c9a254] transition-colors">
             Activar Día Especial ({config.special_days_total - config.special_days_used_count} restantes)
           </button>
         )}
@@ -176,9 +189,9 @@ export default function DayPlanner() {
 
       {/* Timeline */}
       {blocks.length > 0 && (
-        <div className="bg-[#101010] rounded-2xl p-4 mb-4 border border-[#2C2C2C]">
-          <p className="text-[10px] text-[#6B7280] mb-3 uppercase tracking-widest">Timeline</p>
-          <div className="relative h-8 bg-[#181818] rounded-lg overflow-hidden mb-1">
+        <div className="bg-[#110d0a] rounded-lg p-4 mb-4 border border-[#3a2e22]">
+          <SectionTitle>Línea de Tiempo</SectionTitle>
+          <div className="relative h-7 bg-[#0a0806] rounded overflow-hidden mb-1 border border-[#3a2e22]">
             {blocks.map((b) => {
               const s = b.start_minutes ?? b.startMinutes;
               const e = b.end_minutes   ?? b.endMinutes;
@@ -186,11 +199,11 @@ export default function DayPlanner() {
               return (
                 <div
                   key={b.id}
-                  className="absolute top-0 h-full rounded flex items-center justify-center"
+                  className="absolute top-0 h-full"
                   style={{
                     left:    `${toPercent(s)}%`,
                     width:   `${toWidth(s, e)}%`,
-                    backgroundColor: AREA_HEX[area] + '33',
+                    backgroundColor: AREA_HEX[area] + '40',
                     borderLeft: `2px solid ${AREA_HEX[area]}`,
                   }}
                   title={`${minutesToTime(s)}–${minutesToTime(e)} · ${AREAS[area]?.label}`}
@@ -198,34 +211,34 @@ export default function DayPlanner() {
               );
             })}
           </div>
-          <div className="flex justify-between text-[9px] text-[#374151]">
-            <span>06:00</span><span>12:00</span><span>18:00</span><span>24:00</span>
+          <div className="flex justify-between font-mono text-[9px] text-[#3a2e22]">
+            <span>VI</span><span>XII</span><span>XVIII</span><span>XXIV</span>
           </div>
         </div>
       )}
 
       {/* Add block form */}
-      <div className="bg-[#101010] rounded-2xl p-4 mb-4 border border-[#2C2C2C]">
-        <p className="text-[10px] text-[#6B7280] mb-3 uppercase tracking-widest">Nuevo bloque</p>
+      <div className="bg-[#110d0a] rounded-lg p-4 mb-4 border border-[#3a2e22]">
+        <SectionTitle>Nuevo Bloque</SectionTitle>
         <div className="grid grid-cols-2 gap-3 mb-3">
           {[['Inicio', 'start'], ['Fin', 'end']].map(([label, field]) => (
             <div key={field}>
-              <label className="text-xs text-[#6B7280] block mb-1">{label}</label>
+              <label className="font-cinzel text-[8px] text-[#5a4838] block mb-1.5 tracking-[0.2em] uppercase">{label}</label>
               <input
                 type="time"
                 value={form[field]}
                 onChange={(e) => setForm((f) => ({ ...f, [field]: e.target.value }))}
-                className="w-full bg-[#181818] rounded-lg px-3 py-2 text-sm text-white border border-[#2C2C2C] focus:outline-none focus:border-[#6B7280]"
+                className="w-full bg-[#0a0806] rounded px-3 py-2 text-sm text-[#f0e6d0] border border-[#3a2e22] focus:outline-none focus:border-[#c9a254] transition-colors"
               />
             </div>
           ))}
         </div>
         <div className="mb-3">
-          <label className="text-xs text-[#6B7280] block mb-1">Área</label>
+          <label className="font-cinzel text-[8px] text-[#5a4838] block mb-1.5 tracking-[0.2em] uppercase">Área</label>
           <select
             value={form.area}
             onChange={(e) => setForm((f) => ({ ...f, area: e.target.value, projectId: '' }))}
-            className="w-full bg-[#181818] rounded-lg px-3 py-2 text-sm text-white border border-[#2C2C2C] focus:outline-none"
+            className="w-full bg-[#0a0806] rounded px-3 py-2 text-sm text-[#f0e6d0] border border-[#3a2e22] focus:outline-none"
           >
             {Object.values(AREAS).map((a) => (
               <option key={a.id} value={a.id}>{a.label}</option>
@@ -234,33 +247,37 @@ export default function DayPlanner() {
         </div>
         {form.area !== 'OTROS' && areaProjects.length > 0 && (
           <div className="mb-3">
-            <label className="text-xs text-[#6B7280] block mb-1">Proyecto (opcional)</label>
+            <label className="font-cinzel text-[8px] text-[#5a4838] block mb-1.5 tracking-[0.2em] uppercase">Empresa (opcional)</label>
             <select
               value={form.projectId}
               onChange={(e) => setForm((f) => ({ ...f, projectId: e.target.value }))}
-              className="w-full bg-[#181818] rounded-lg px-3 py-2 text-sm text-white border border-[#2C2C2C] focus:outline-none"
+              className="w-full bg-[#0a0806] rounded px-3 py-2 text-sm text-[#f0e6d0] border border-[#3a2e22] focus:outline-none"
             >
-              <option value="">Sin proyecto</option>
+              <option value="">Sin empresa</option>
               {areaProjects.map((p) => (
                 <option key={p.id} value={p.id}>{p.name}</option>
               ))}
             </select>
           </div>
         )}
-        {error && <p className="text-red-400 text-xs mb-2">{error}</p>}
+        {error && (
+          <p className="text-[#8b1a2a] text-xs bg-[#8b1a2a]/10 border border-[#8b1a2a]/30 px-3 py-2 rounded mb-3">
+            {error}
+          </p>
+        )}
         <button
           onClick={addBlock}
           disabled={saving}
-          className="w-full bg-[#222222] hover:bg-[#2C2C2C] text-[#F0F0F0] py-2.5 rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
+          className="w-full font-cinzel text-[10px] tracking-[0.15em] uppercase bg-[#1a1410] hover:bg-[#2a1f14] text-[#c9a254] border border-[#c9a254]/30 py-2.5 rounded transition-colors disabled:opacity-50"
         >
-          {saving ? 'Guardando...' : '+ Agregar bloque'}
+          {saving ? 'Guardando...' : '+ Agregar Bloque'}
         </button>
       </div>
 
       {/* Blocks list */}
       {blocks.length > 0 && (
-        <div className="bg-[#101010] rounded-2xl p-4 mb-4 border border-[#2C2C2C]">
-          <p className="text-[10px] text-[#6B7280] mb-3 uppercase tracking-widest">Bloques ({blocks.length})</p>
+        <div className="bg-[#110d0a] rounded-lg p-4 mb-4 border border-[#3a2e22]">
+          <SectionTitle>Bloques del Día ({blocks.length})</SectionTitle>
           <div className="flex flex-col gap-2">
             {blocks.map((b) => {
               const s = b.start_minutes ?? b.startMinutes;
@@ -268,22 +285,22 @@ export default function DayPlanner() {
               const area = b.area_id || b.area;
               const proj = projects.find((p) => p.id === b.project_id);
               return (
-                <div key={b.id} className="flex items-center justify-between bg-[#181818] rounded-xl p-3">
+                <div key={b.id} className="flex items-center justify-between bg-[#0a0806] rounded p-3 border border-[#3a2e22]">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <span className="text-sm font-mono text-white">
+                      <span className="font-mono text-sm text-[#f0e6d0]">
                         {minutesToTime(s)}–{minutesToTime(e)}
                       </span>
-                      <span className="text-[#6B7280] text-xs">({minutesToLabel(e - s)})</span>
+                      <span className="text-[#9a8470] text-xs">({minutesToLabel(e - s)})</span>
                       <AreaBadge area={area} />
                     </div>
                     {proj && (
-                      <p className="text-[#374151] text-xs mt-0.5 truncate">{proj.name}</p>
+                      <p className="text-[#5a4838] text-xs mt-0.5 truncate">{proj.name}</p>
                     )}
                   </div>
                   <button
                     onClick={() => removeBlock(b.id)}
-                    className="text-[#374151] hover:text-red-400 ml-3 shrink-0 transition-colors"
+                    className="text-[#3a2e22] hover:text-[#8b1a2a] ml-3 shrink-0 transition-colors"
                   >
                     ✕
                   </button>
@@ -296,27 +313,30 @@ export default function DayPlanner() {
 
       {/* Warnings */}
       {warnings.length > 0 && (
-        <div className="bg-[#181818] border border-red-800 rounded-2xl p-4 mb-4">
-          <p className="text-red-400 text-sm font-bold mb-2">Faltan mínimos:</p>
+        <div className="bg-[#110d0a] border border-[#8b1a2a]/40 rounded-lg p-4 mb-4">
+          <p className="font-cinzel text-[9px] text-[#8b1a2a] tracking-[0.2em] uppercase mb-3">
+            Mínimos insuficientes
+          </p>
           {warnings.map((w, i) => (
-            <p key={i} className="text-[#6B7280] text-sm">• {w}</p>
+            <p key={i} className="text-[#9a8470] text-sm">• {w}</p>
           ))}
           {canActivateSpecial && (
-            <button onClick={activateSpecialDay} className="mt-3 text-xs text-yellow-400 underline">
-              Activar Día Especial para saltar mínimos
+            <button onClick={activateSpecialDay}
+              className="mt-3 font-cinzel text-[9px] tracking-widest uppercase text-[#c9a254]/70 hover:text-[#c9a254] transition-colors">
+              Activar Día Especial para continuar
             </button>
           )}
         </div>
       )}
 
       {/* Confirm button */}
-      <div className="fixed bottom-0 left-0 right-0 md:left-60 p-4 bg-[#080808] border-t border-[#2C2C2C]">
+      <div className="fixed bottom-0 left-0 right-0 md:left-60 p-4 bg-[#0a0806]/95 border-t border-[#3a2e22]">
         <button
           onClick={handleConfirm}
           disabled={blocks.length === 0 || confirming}
-          className="w-full max-w-2xl mx-auto block bg-white text-black font-black py-4 rounded-xl text-lg active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed transition-transform"
+          className="w-full max-w-2xl mx-auto block font-cinzel font-bold bg-[#f0e6d0] text-[#0a0806] py-4 rounded text-sm tracking-[0.15em] uppercase active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed transition-transform"
         >
-          {confirming ? 'Confirmando...' : 'CONFIRMAR PLANIFICACIÓN →'}
+          {confirming ? 'Confirmando...' : 'Confirmar Planificación →'}
         </button>
       </div>
     </div>

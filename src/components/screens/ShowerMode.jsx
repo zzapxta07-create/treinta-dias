@@ -29,24 +29,34 @@ export default function ShowerMode() {
 
   if (expired) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-[#0a0a0a] text-center px-6">
-        <div className="text-6xl mb-4">💤</div>
-        <p className="text-red-400 text-2xl font-black">Tiempo agotado</p>
-        <p className="text-gray-500 mt-3">
-          El día quedó perdido. Mañana a las 7am de nuevo.
-        </p>
+      <div className="min-h-screen flex flex-col items-center justify-center bg-[#0a0806] text-center px-6">
+        <div className="fixed inset-0 pointer-events-none"
+          style={{ background: 'radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,0.7) 100%)' }} />
+        <div className="relative">
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full border border-[#8b1a2a]/40 bg-[#110d0a] mb-5">
+            <span className="text-[#8b1a2a] text-2xl">☽</span>
+          </div>
+          <p className="font-cinzel text-[#8b1a2a] text-2xl font-bold tracking-[0.08em]">Tiempo Agotado</p>
+          <p className="text-[#9a8470] mt-3 text-sm">El día quedó perdido. Mañana a las 7am de nuevo.</p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-[#0a0a0a] px-6 py-10">
-      <div className="w-full max-w-sm">
-        <h1 className="text-3xl font-black mb-1 text-center tracking-tight">
-          MODO DUCHA
-        </h1>
-        <p className="text-gray-500 text-sm text-center mb-8">
-          Andá a ducharte. Tenés 20 minutos para volver con tu foto.
+    <div className="min-h-screen flex flex-col items-center justify-center bg-[#0a0806] px-6 py-10">
+      <div className="fixed inset-0 pointer-events-none"
+        style={{ background: 'radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,0.6) 100%)' }} />
+      <div className="relative w-full max-w-sm">
+        <div className="text-center mb-8">
+          <div className="inline-flex items-center justify-center w-14 h-14 rounded-full border border-[#3a2e22] bg-[#110d0a] mb-4">
+            <span className="text-[#c9a254] text-2xl">☀</span>
+          </div>
+          <p className="font-cinzel text-[#5a4838] text-[9px] tracking-[0.4em] uppercase mb-1">Purificación</p>
+          <h1 className="font-cinzel text-2xl font-bold text-[#f0e6d0] tracking-[0.06em]">Ritual del Agua</h1>
+        </div>
+        <p className="text-[#9a8470] text-sm text-center mb-6">
+          Ve a ducharte. Tienes 20 minutos para volver con tu foto.
         </p>
 
         <div className="text-center mb-8">
@@ -57,35 +67,33 @@ export default function ShowerMode() {
 
         <div className="flex flex-col gap-5">
           <div>
-            <p className="text-sm text-gray-400 mb-3 text-center">Foto post-ducha</p>
+            <p className="font-cinzel text-[9px] text-[#5a4838] tracking-[0.2em] uppercase mb-3 text-center">
+              Prueba del Ritual
+            </p>
             <div className="flex justify-center">
-              <PhotoUpload
-                value={photo}
-                onChange={setPhoto}
-                label="Subir foto de ducha"
-              />
+              <PhotoUpload value={photo} onChange={setPhoto} label="Subir foto de ducha" />
             </div>
           </div>
 
           <div>
-            <label className="text-sm text-gray-400 block mb-1.5">
-              Frase motivacional del día
+            <label className="font-cinzel text-[9px] text-[#5a4838] block mb-2 tracking-[0.2em] uppercase">
+              Frase de Batalla
             </label>
             <textarea
               value={phrase}
               onChange={(e) => setPhrase(e.target.value)}
               rows={3}
               placeholder="Escribí tu frase para hoy..."
-              className="w-full bg-[#1a1a1a] rounded-xl px-4 py-3 text-sm text-white placeholder-gray-700 border border-[#333333] focus:outline-none focus:border-gray-500 resize-none"
+              className="w-full bg-[#110d0a] rounded px-4 py-3 text-sm text-[#f0e6d0] placeholder-[#3a2e22] border border-[#3a2e22] focus:outline-none focus:border-[#c9a254] resize-none transition-colors"
             />
           </div>
 
           <button
             onClick={handleSubmit}
             disabled={!canSubmit}
-            className="w-full bg-green-500 text-black font-black py-4 rounded-xl text-lg active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed transition-transform"
+            className="w-full font-cinzel font-bold bg-[#f0e6d0] text-[#0a0806] py-4 rounded text-sm tracking-[0.12em] uppercase active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed transition-transform"
           >
-            LISTO, A TRABAJAR
+            ¡A las Armas!
           </button>
         </div>
       </div>

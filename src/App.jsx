@@ -20,10 +20,10 @@ import Habits        from './components/screens/Habits';
 
 function Spinner() {
   return (
-    <div className="min-h-screen bg-[#080808] flex items-center justify-center">
+    <div className="min-h-screen bg-stone flex items-center justify-center">
       <div className="text-center">
-        <div className="w-8 h-8 border-2 border-[#2C2C2C] border-t-white rounded-full animate-spin mx-auto mb-3" />
-        <p className="text-[#6B7280] text-sm">Cargando...</p>
+        <div className="w-8 h-8 border-2 border-[#3a2e22] border-t-[#c9a254] rounded-full animate-spin mx-auto mb-4" />
+        <p className="font-cinzel text-[#5a4838] text-xs tracking-[0.3em] uppercase">Cargando...</p>
       </div>
     </div>
   );
@@ -31,7 +31,7 @@ function Spinner() {
 
 function AppShell({ navScreen, setNavScreen, children }) {
   return (
-    <div className="flex min-h-screen bg-[#080808]">
+    <div className="flex min-h-screen bg-stone">
       <Sidebar navScreen={navScreen} setNavScreen={setNavScreen} />
       <main className="flex-1 md:ml-60 pb-20 md:pb-0 overflow-auto min-h-screen">
         {children}
@@ -49,9 +49,8 @@ export default function App() {
   const logout       = useStore((s) => s.logout);
 
   const [loading,   setLoading]   = useState(true);
-  const [navScreen, setNavScreen] = useState(null); // null | 'history' | 'projects' | 'habits'
+  const [navScreen, setNavScreen] = useState(null);
 
-  // Load today's day and config on login
   useEffect(() => {
     if (!token) { setLoading(false); return; }
 
@@ -72,13 +71,11 @@ export default function App() {
     init();
   }, [token]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ─── Not logged in ─────────────────────────────────────────────────────────
   if (!token) return <Login />;
   if (loading || !currentDay) return <Spinner />;
 
   const phase = currentDay.phase;
 
-  // ─── Nav-screen overrides (History / Projects / Habits) ───────────────────
   const NAV_SCREENS = {
     history:  <History />,
     projects: <Projects />,
@@ -92,7 +89,6 @@ export default function App() {
     );
   }
 
-  // ─── Fullscreen phases (no shell) ─────────────────────────────────────────
   const FULLSCREEN = ['ritual', 'day_lost', 'day_complete'];
   if (FULLSCREEN.includes(phase)) {
     const SCREENS = {
@@ -103,7 +99,6 @@ export default function App() {
     return SCREENS[phase] || <Spinner />;
   }
 
-  // ─── Shell phases ─────────────────────────────────────────────────────────
   const SCREENS = {
     yesterday: <YesterdaySummary />,
     planner:   <DayPlanner />,

@@ -8,7 +8,7 @@ export default function Login() {
   const [password, setPassword] = useState('');
   const [error,    setError]    = useState('');
   const [loading,  setLoading]  = useState(false);
-  const [mode,     setMode]     = useState('login'); // 'login' | 'register'
+  const [mode,     setMode]     = useState('login');
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -19,7 +19,6 @@ export default function Login() {
       const { data } = await api.post(endpoint, { username, password });
 
       if (mode === 'register') {
-        // After register, login automatically
         const { data: loginData } = await api.post('/api/auth/login', { username, password });
         setAuth(loginData.data.token, loginData.data.user);
       } else {
@@ -33,58 +32,85 @@ export default function Login() {
   }
 
   return (
-    <div className="min-h-screen bg-[#080808] flex items-center justify-center px-4">
-      <div className="w-full max-w-sm">
-        {/* Header */}
-        <div className="mb-10">
-          <p className="text-[#6B7280] text-xs uppercase tracking-widest mb-3">Sistema de productividad</p>
-          <h1 className="text-3xl font-black text-white leading-tight">
-            {mode === 'login' ? 'Acceder' : 'Crear cuenta'}
+    <div className="min-h-screen bg-[#0a0806] flex items-center justify-center px-4">
+      {/* Subtle vignette overlay */}
+      <div className="fixed inset-0 pointer-events-none"
+        style={{ background: 'radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,0.6) 100%)' }} />
+
+      <div className="relative w-full max-w-sm">
+        {/* Crest */}
+        <div className="text-center mb-10">
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full border border-[#3a2e22] bg-[#110d0a] mb-4">
+            <span className="text-[#c9a254] text-3xl">⚔</span>
+          </div>
+          <p className="font-cinzel text-[#5a4838] text-[9px] tracking-[0.4em] uppercase mb-2">
+            Codex Productivitatis
+          </p>
+          <h1 className="font-cinzel text-3xl font-bold text-[#f0e6d0] tracking-[0.08em]">
+            {mode === 'login' ? 'ACCEDER' : 'REGISTRARSE'}
           </h1>
+          {/* Ornament line */}
+          <div className="flex items-center gap-3 mt-3 px-8">
+            <div className="flex-1 h-px bg-[#3a2e22]" />
+            <span className="text-[#5a4838] text-xs">◆</span>
+            <div className="flex-1 h-px bg-[#3a2e22]" />
+          </div>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="text-xs text-[#6B7280] block mb-1.5 uppercase tracking-wider">Usuario</label>
+            <label className="font-cinzel text-[9px] text-[#5a4838] block mb-2 tracking-[0.2em] uppercase">
+              Nombre del Caballero
+            </label>
             <input
               type="text"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               autoComplete="username"
               required
-              className="w-full bg-[#101010] border border-[#2C2C2C] rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-[#6B7280] transition-colors"
+              className="w-full bg-[#110d0a] border border-[#3a2e22] rounded-lg px-4 py-3 text-[#f0e6d0] text-base focus:outline-none focus:border-[#c9a254] transition-colors placeholder-[#3a2e22]"
               placeholder="username"
             />
           </div>
           <div>
-            <label className="text-xs text-[#6B7280] block mb-1.5 uppercase tracking-wider">Contraseña</label>
+            <label className="font-cinzel text-[9px] text-[#5a4838] block mb-2 tracking-[0.2em] uppercase">
+              Contraseña Secreta
+            </label>
             <input
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               autoComplete={mode === 'register' ? 'new-password' : 'current-password'}
               required
-              className="w-full bg-[#101010] border border-[#2C2C2C] rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-[#6B7280] transition-colors"
+              className="w-full bg-[#110d0a] border border-[#3a2e22] rounded-lg px-4 py-3 text-[#f0e6d0] text-base focus:outline-none focus:border-[#c9a254] transition-colors placeholder-[#3a2e22]"
               placeholder="••••••••"
             />
           </div>
 
           {error && (
-            <p className="text-red-400 text-sm bg-red-400/10 px-3 py-2 rounded-lg">{error}</p>
+            <p className="text-[#8b1a2a] text-sm bg-[#8b1a2a]/10 border border-[#8b1a2a]/30 px-3 py-2 rounded-lg">
+              {error}
+            </p>
           )}
 
           <button
             type="submit"
             disabled={loading || !username || !password}
-            className="w-full bg-white text-black font-black py-4 rounded-xl text-base active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed transition-transform"
+            className="w-full bg-[#f0e6d0] text-[#0a0806] font-cinzel font-bold py-4 rounded-lg text-base tracking-[0.1em] active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed transition-transform mt-2"
           >
-            {loading ? 'Cargando...' : mode === 'login' ? 'ENTRAR' : 'CREAR CUENTA'}
+            {loading ? 'CARGANDO...' : mode === 'login' ? 'ENTRAR AL CASTILLO' : 'CREAR CUENTA'}
           </button>
         </form>
 
+        <div className="flex items-center gap-3 my-6">
+          <div className="flex-1 h-px bg-[#3a2e22]" />
+          <span className="text-[#5a4838] text-xs">◆</span>
+          <div className="flex-1 h-px bg-[#3a2e22]" />
+        </div>
+
         <button
           onClick={() => { setMode(m => m === 'login' ? 'register' : 'login'); setError(''); }}
-          className="mt-6 w-full text-center text-[#6B7280] text-sm hover:text-white transition-colors"
+          className="w-full text-center text-[#9a8470] text-sm hover:text-[#f0e6d0] transition-colors"
         >
           {mode === 'login' ? '¿Primera vez? Crear cuenta' : '¿Ya tenés cuenta? Iniciar sesión'}
         </button>

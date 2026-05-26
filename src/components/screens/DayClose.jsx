@@ -8,16 +8,26 @@ const EMOTION_LABELS = {
   6:'Bien',7:'Bien',8:'Muy bien',9:'Excelente',10:'Excelente',
 };
 
+function SectionTitle({ children }) {
+  return (
+    <div className="flex items-center gap-3 mb-3">
+      <div className="flex-1 h-px bg-[#3a2e22]" />
+      <p className="font-cinzel text-[8px] text-[#5a4838] uppercase tracking-[0.25em] shrink-0">{children}</p>
+      <div className="flex-1 h-px bg-[#3a2e22]" />
+    </div>
+  );
+}
+
 export default function DayClose() {
   const currentDay    = useStore((s) => s.currentDay);
   const setCurrentDay = useStore((s) => s.setCurrentDay);
 
-  const [projects,      setProjects]      = useState([]);
-  const [photo,         setPhoto]         = useState(null);
-  const [emotionalState, setEmotionalState] = useState(5);
+  const [projects,        setProjects]        = useState([]);
+  const [photo,           setPhoto]           = useState(null);
+  const [emotionalState,  setEmotionalState]  = useState(5);
   const [projectProgress, setProjectProgress] = useState({});
-  const [binaryDone,    setBinaryDone]    = useState({});
-  const [saving,        setSaving]        = useState(false);
+  const [binaryDone,      setBinaryDone]      = useState({});
+  const [saving,          setSaving]          = useState(false);
 
   useEffect(() => {
     api.get('/api/projects').then((r) => {
@@ -32,7 +42,6 @@ export default function DayClose() {
     }).catch(() => {});
   }, []);
 
-  // If today is different from stored day → init new day
   useEffect(() => {
     if (!currentDay) return;
     const today = (() => {
@@ -68,44 +77,52 @@ export default function DayClose() {
 
   return (
     <div className="min-h-screen px-4 py-6 max-w-lg mx-auto pb-28">
-      <h1 className="text-xl font-black mb-1">Cierre del día</h1>
-      <p className="text-[#6B7280] text-sm mb-6">Registrá el cierre antes de dormir.</p>
+      {/* Header */}
+      <p className="font-cinzel text-[9px] text-[#5a4838] tracking-[0.3em] uppercase mb-1">
+        Crepúsculo
+      </p>
+      <h1 className="font-cinzel text-2xl font-bold text-[#f0e6d0] tracking-[0.06em] mb-1">
+        Cierre del Día
+      </h1>
+      <p className="text-[#5a4838] text-sm mb-6">Registra el cierre antes de que caiga la noche.</p>
 
       {/* PC photo */}
-      <div className="bg-[#101010] rounded-2xl p-4 mb-4 border border-[#2C2C2C]">
-        <p className="text-xs text-[#6B7280] mb-3 uppercase tracking-wider">Foto del PC apagado</p>
+      <div className="bg-[#110d0a] rounded-lg p-4 mb-4 border border-[#3a2e22]">
+        <SectionTitle>Prueba del Retiro</SectionTitle>
         <div className="flex justify-center">
           <PhotoUpload value={photo} onChange={setPhoto} label="Foto del PC apagado" />
         </div>
       </div>
 
       {/* Emotional state */}
-      <div className="bg-[#101010] rounded-2xl p-4 mb-4 border border-[#2C2C2C]">
-        <p className="text-xs text-[#6B7280] mb-3 uppercase tracking-wider">Estado emocional</p>
+      <div className="bg-[#110d0a] rounded-lg p-4 mb-4 border border-[#3a2e22]">
+        <SectionTitle>Estado del Espíritu</SectionTitle>
         <div className="flex items-baseline gap-3 mb-3">
-          <span className="text-4xl font-black text-white font-mono">{emotionalState}</span>
-          <span className="text-[#6B7280] text-lg">{EMOTION_LABELS[emotionalState]}</span>
+          <span className="font-mono text-4xl font-black text-[#c9a254]">{emotionalState}</span>
+          <span className="text-[#9a8470] text-lg">{EMOTION_LABELS[emotionalState]}</span>
         </div>
         <input
           type="range" min={1} max={10} value={emotionalState}
           onChange={(e) => setEmotionalState(Number(e.target.value))}
           className="w-full"
         />
-        <div className="flex justify-between text-xs text-[#374151] mt-1">
+        <div className="flex justify-between font-cinzel text-[8px] text-[#3a2e22] mt-1 tracking-widest uppercase">
           <span>Muy mal</span><span>Excelente</span>
         </div>
       </div>
 
       {/* Projects */}
       {projects.length > 0 && (
-        <div className="bg-[#101010] rounded-2xl p-4 mb-4 border border-[#2C2C2C]">
-          <p className="text-xs text-[#6B7280] mb-4 uppercase tracking-wider">Progreso de proyectos</p>
+        <div className="bg-[#110d0a] rounded-lg p-4 mb-4 border border-[#3a2e22]">
+          <SectionTitle>Progreso de Empresas</SectionTitle>
           <div className="flex flex-col gap-5">
             {percentProjects.map((p) => (
               <div key={p.id}>
                 <div className="flex justify-between text-sm mb-2">
-                  <span className="text-[#F0F0F0] truncate mr-2 max-w-[80%]">{p.name}</span>
-                  <span className="text-white font-mono font-bold shrink-0">{projectProgress[p.id] || 0}%</span>
+                  <span className="text-[#f0e6d0] truncate mr-2 max-w-[80%]">{p.name}</span>
+                  <span className="font-mono text-[#c9a254] font-bold shrink-0">
+                    {projectProgress[p.id] || 0}%
+                  </span>
                 </div>
                 <input
                   type="range" min={0} max={100} value={projectProgress[p.id] || 0}
@@ -116,11 +133,13 @@ export default function DayClose() {
             ))}
             {binaryProjects.map((p) => (
               <div key={p.id} className="flex items-center justify-between">
-                <span className="text-[#F0F0F0] text-sm max-w-[70%]">{p.name}</span>
+                <span className="text-[#f0e6d0] text-sm max-w-[70%]">{p.name}</span>
                 <button
                   onClick={() => setBinaryDone((prev) => ({ ...prev, [p.id]: !prev[p.id] }))}
-                  className={`shrink-0 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors ${
-                    binaryDone[p.id] ? 'bg-green-600 text-white' : 'bg-[#222222] text-[#6B7280]'
+                  className={`shrink-0 font-cinzel text-[9px] tracking-[0.1em] uppercase px-3 py-1.5 rounded transition-colors ${
+                    binaryDone[p.id]
+                      ? 'bg-[#c9a254] text-[#0a0806]'
+                      : 'bg-[#1a1410] text-[#9a8470] border border-[#3a2e22]'
                   }`}
                 >
                   {binaryDone[p.id] ? '✓ Realizada' : 'Pendiente'}
@@ -131,13 +150,13 @@ export default function DayClose() {
         </div>
       )}
 
-      <div className="fixed bottom-0 left-0 right-0 md:left-60 p-4 bg-[#080808] border-t border-[#2C2C2C]">
+      <div className="fixed bottom-0 left-0 right-0 md:left-60 p-4 bg-[#0a0806]/95 border-t border-[#3a2e22]">
         <button
           onClick={handleClose}
           disabled={!photo || saving}
-          className="w-full max-w-lg mx-auto block bg-white text-black font-black py-4 rounded-xl text-xl active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed transition-transform"
+          className="w-full max-w-lg mx-auto block font-cinzel font-bold bg-[#f0e6d0] text-[#0a0806] py-4 rounded text-sm tracking-[0.15em] uppercase active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed transition-transform"
         >
-          {saving ? 'Cerrando...' : 'CERRAR DÍA'}
+          {saving ? 'Cerrando...' : 'Cerrar el Día →'}
         </button>
       </div>
     </div>
