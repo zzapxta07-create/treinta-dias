@@ -7,9 +7,8 @@ import { calcDayScore, areaMinutesFromBlocks } from '../../utils/scoring';
 import { formatTime, minutesToLabel, minutesToTime, timeToMinutes } from '../../utils/dateUtils';
 import { AREAS, MANDATORY_AREAS } from '../../data/areas';
 import ScoreRing from '../ui/ScoreRing';
-import EvidenceInline from '../ui/EvidenceInline';
+import EvidenceInline, { EvidenceForm, NotificationBadge } from '../ui/EvidenceInline';
 import AiChat from '../ui/AiChat';
-import { EvidenceForm } from '../ui/EvidenceInline';
 import api from '../../api/index.js';
 
 const AREA_MINS = { NEGOCIO: 300, SEGUNDA: 60, ESTUDIO: 180, EJERCICIO: 30 };
@@ -161,13 +160,33 @@ export default function Dashboard({ setNavScreen }) {
             <p className="font-mono text-[#c9a254] text-xs font-bold mt-0.5">{score} pts</p>
           )}
         </div>
-        <button
-          onClick={() => setChatOpen(v => !v)}
-          className="flex items-center gap-2 bg-[#1a1410] border border-[#3a2e22] hover:border-[#c9a254] px-3 py-1.5 rounded-lg text-sm text-[#9a8470] hover:text-[#c9a254] transition-colors"
-        >
-          <span className="text-[#c9a254] font-bold text-base">✦</span>
-          <span className="font-cinzel text-[11px] tracking-[0.08em]">Coach</span>
-        </button>
+        <div className="flex items-center gap-2">
+          {/* Notification bell */}
+          <div className="relative">
+            <button
+              onClick={() => {
+                const el = document.getElementById('notifications-panel');
+                el?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+              }}
+              className="flex items-center gap-1.5 bg-[#1a1410] border border-[#3a2e22] hover:border-[#8b1a2a]/50 px-3 py-1.5 rounded-lg text-[#5a4838] hover:text-[#9a8470] transition-colors"
+              title="Ver evidencias pendientes"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+                <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+              </svg>
+              <NotificationBadge />
+            </button>
+          </div>
+          <button
+            onClick={() => setChatOpen(v => !v)}
+            className="flex items-center gap-2 bg-[#1a1410] border border-[#3a2e22] hover:border-[#c9a254] px-3 py-1.5 rounded-lg text-sm text-[#9a8470] hover:text-[#c9a254] transition-colors"
+          >
+            <span className="text-[#c9a254] font-bold text-base">✦</span>
+            <span className="font-cinzel text-[11px] tracking-[0.08em]">Coach</span>
+          </button>
+        </div>
       </div>
 
       {/* Daily phrase */}
@@ -177,7 +196,9 @@ export default function Dashboard({ setNavScreen }) {
         </p>
       )}
 
-      <EvidenceInline />
+      <div id="notifications-panel">
+        <EvidenceInline />
+      </div>
 
       <div className="flex flex-col md:flex-row gap-4">
         {/* ── Left ─────────────────────────────────────────── */}
