@@ -12,7 +12,7 @@ export const SCORE_TABLE = {
 // Only counts work blocks (not OTROS) that have evidence submitted
 export function areaMinutesFromBlocks(blocks, evidences = []) {
   const result = { NEGOCIO: 0, SEGUNDA: 0, ESTUDIO: 0, EJERCICIO: 0, OTROS: 0 };
-  const evidencedIds = new Set((evidences || []).map(e => e.block_id));
+  const evidencedIds = new Set((evidences || []).filter(e => !e.no_hice).map(e => e.block_id));
   for (const b of blocks) {
     const key = b.area_id || b.area;
     const dur = (b.end_minutes ?? b.endMinutes) - (b.start_minutes ?? b.startMinutes);

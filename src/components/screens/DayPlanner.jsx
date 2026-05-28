@@ -29,6 +29,8 @@ export default function DayPlanner() {
   const [warnings, setWarnings] = useState([]);
   const [saving,   setSaving]   = useState(false);
   const [confirming, setConfirming] = useState(false);
+  const [editingId, setEditingId] = useState(null);
+  const [editForm, setEditForm] = useState({});
 
   const areaMins = blocks.reduce((acc, b) => {
     const area = b.area_id || b.area;
@@ -99,6 +101,53 @@ export default function DayPlanner() {
       setCurrentDay({ ...currentDay, blocks: updated });
     } catch {
       setError('Error al eliminar bloque');
+    }
+  }
+
+  function startEdit(b) {
+    setEditingId(b.id);
+    setEditForm({
+      start:     minutesToTime(b.start_minutes ?? b.startMinutes),
+      end:       minutesToTime(b.end_minutes   ?? b.endMinutes),
+      area:      b.area_id || b.area,
+      projectId: b.project_id ? String(b.project_id) : '',
+    });
+    setError('');
+  }
+
+  async function saveEdit(blockId) {
+    const startM = timeToMinutes(editForm.start);
+    const endM   = timeToMinutes(editForm.end);
+    if (endM <= startM) { setError('El fin debe ser después del inicio.'); return; }
+    const overlap = blocks.find((b) => {
+      if (b.id === blockId) return false;
+      const s = b.start_minutes ?? b.startMinutes;
+      const e = b.end_minutes   ?? b.endMinutes;
+      return !(endM <= s || startM >= e);
+    });
+    if (overlap) {
+      setError(`Solapamiento con ${minutesToTime(overlap.start_minutes ?? overlap.startMinutes)}–${minutesToTime(overlap.end_minutes ?? overlap.endMinutes)}.`);
+      return;
+    }
+    setSaving(true);
+    try {
+      const { data } = await api.put(`/api/blocks/${blockId}`, {
+        area_id:       editForm.area,
+        project_id:    editForm.projectId ? parseInt(editForm.projectId) : null,
+        start_time:    editForm.start,
+        end_time:      editForm.end,
+        start_minutes: startM,
+        end_minutes:   endM,
+      });
+      const updated = (data.data?.day?.blocks || blocks.map(b => b.id === blockId ? data.data.block : b))
+        .sort((a, b) => (a.start_minutes ?? a.startMinutes) - (b.start_minutes ?? b.startMinutes));
+      setBlocks(updated);
+      setCurrentDay({ ...currentDay, blocks: updated });
+      setEditingId(null);
+    } catch (err) {
+      setError(err.response?.data?.error || 'Error al guardar');
+    } finally {
+      setSaving(false);
     }
   }
 
@@ -284,6 +333,72 @@ export default function DayPlanner() {
               const e = b.end_minutes   ?? b.endMinutes;
               const area = b.area_id || b.area;
               const proj = projects.find((p) => p.id === b.project_id);
+              const isEditing = editingId === b.id;
+              const editAreaProjects = projects.filter((p) => p.area_id === editForm.area && !p.archived);
+
+              if (isEditing) {
+                return (
+                  <div key={b.id} className="bg-[#110d0a] rounded-lg p-4 border border-[#3a2e22] border-l-4" style={{ borderLeftColor: AREA_HEX[editForm.area] || '#9a8470' }}>
+                    <div className="grid grid-cols-2 gap-3 mb-3">
+                      {[['Inicio', 'start'], ['Fin', 'end']].map(([label, field]) => (
+                        <div key={field}>
+                          <label className="font-cinzel text-[8px] text-[#5a4838] block mb-1.5 tracking-[0.2em] uppercase">{label}</label>
+                          <input
+                            type="time"
+                            value={editForm[field]}
+                            onChange={(e) => setEditForm((f) => ({ ...f, [field]: e.target.value }))}
+                            className="w-full bg-[#0a0806] rounded px-3 py-2 text-sm text-[#f0e6d0] border border-[#3a2e22] focus:outline-none focus:border-[#c9a254] transition-colors"
+                          />
+                        </div>
+                      ))}
+                    </div>
+                    <div className="mb-3">
+                      <label className="font-cinzel text-[8px] text-[#5a4838] block mb-1.5 tracking-[0.2em] uppercase">Área</label>
+                      <select
+                        value={editForm.area}
+                        onChange={(e) => setEditForm((f) => ({ ...f, area: e.target.value, projectId: '' }))}
+                        className="w-full bg-[#0a0806] rounded px-3 py-2 text-sm text-[#f0e6d0] border border-[#3a2e22] focus:outline-none"
+                      >
+                        {Object.values(AREAS).map((a) => (
+                          <option key={a.id} value={a.id}>{a.label}</option>
+                        ))}
+                      </select>
+                    </div>
+                    {editForm.area !== 'OTROS' && editAreaProjects.length > 0 && (
+                      <div className="mb-3">
+                        <label className="font-cinzel text-[8px] text-[#5a4838] block mb-1.5 tracking-[0.2em] uppercase">Empresa (opcional)</label>
+                        <select
+                          value={editForm.projectId}
+                          onChange={(e) => setEditForm((f) => ({ ...f, projectId: e.target.value }))}
+                          className="w-full bg-[#0a0806] rounded px-3 py-2 text-sm text-[#f0e6d0] border border-[#3a2e22] focus:outline-none"
+                        >
+                          <option value="">Sin empresa</option>
+                          {editAreaProjects.map((p) => (
+                            <option key={p.id} value={p.id}>{p.name}</option>
+                          ))}
+                        </select>
+                      </div>
+                    )}
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => saveEdit(b.id)}
+                        disabled={saving}
+                        className="flex-1 font-cinzel text-[10px] tracking-[0.15em] uppercase bg-[#c9a254] hover:bg-[#d4b366] text-[#0a0806] py-2 rounded transition-colors disabled:opacity-50"
+                      >
+                        {saving ? 'Guardando...' : 'Guardar'}
+                      </button>
+                      <button
+                        onClick={() => setEditingId(null)}
+                        disabled={saving}
+                        className="flex-1 font-cinzel text-[10px] tracking-[0.15em] uppercase bg-[#1a1410] hover:bg-[#2a1f14] text-[#5a4838] border border-[#3a2e22] py-2 rounded transition-colors disabled:opacity-50"
+                      >
+                        Cancelar
+                      </button>
+                    </div>
+                  </div>
+                );
+              }
+
               return (
                 <div key={b.id} className="flex items-center justify-between bg-[#0a0806] rounded p-3 border border-[#3a2e22]">
                   <div className="flex-1 min-w-0">
@@ -298,12 +413,22 @@ export default function DayPlanner() {
                       <p className="text-[#5a4838] text-xs mt-0.5 truncate">{proj.name}</p>
                     )}
                   </div>
-                  <button
-                    onClick={() => removeBlock(b.id)}
-                    className="text-[#3a2e22] hover:text-[#8b1a2a] ml-3 shrink-0 transition-colors"
-                  >
-                    ✕
-                  </button>
+                  <div className="flex gap-2 ml-3 shrink-0">
+                    <button
+                      onClick={() => startEdit(b)}
+                      className="text-[#5a4838] hover:text-[#c9a254] transition-colors text-sm"
+                      title="Editar bloque"
+                    >
+                      ✎
+                    </button>
+                    <button
+                      onClick={() => removeBlock(b.id)}
+                      className="text-[#3a2e22] hover:text-[#8b1a2a] transition-colors"
+                      title="Eliminar bloque"
+                    >
+                      ✕
+                    </button>
+                  </div>
                 </div>
               );
             })}
