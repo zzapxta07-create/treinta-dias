@@ -24,7 +24,7 @@ export default function DayPlanner() {
 
   const [projects, setProjects] = useState([]);
   const [blocks,   setBlocks]   = useState(currentDay?.blocks || []);
-  const [form,     setForm]     = useState({ start: '07:00', end: '08:00', area: 'NEGOCIO', projectId: '' });
+  const [form,     setForm]     = useState({ start: '07:00', end: '08:00', area: 'NEGOCIO', projectId: '', notes: '' });
   const [error,    setError]    = useState('');
   const [warnings, setWarnings] = useState([]);
   const [saving,   setSaving]   = useState(false);
@@ -77,6 +77,7 @@ export default function DayPlanner() {
         start_minutes: startM,
         end_minutes:   endM,
         sort_order:    blocks.length,
+        notes:         form.notes.trim() || null,
       };
       const { data } = await api.post('/api/blocks', payload);
       const newBlock = data.data;
@@ -85,7 +86,7 @@ export default function DayPlanner() {
       );
       setBlocks(updated);
       setCurrentDay({ ...currentDay, blocks: updated });
-      setForm((f) => ({ ...f, start: form.end }));
+      setForm((f) => ({ ...f, start: form.end, notes: '' }));
     } catch (err) {
       setError(err.response?.data?.error || 'Error al guardar bloque');
     } finally {
@@ -111,6 +112,7 @@ export default function DayPlanner() {
       end:       minutesToTime(b.end_minutes   ?? b.endMinutes),
       area:      b.area_id || b.area,
       projectId: b.project_id ? String(b.project_id) : '',
+      notes:     b.notes || '',
     });
     setError('');
   }
@@ -138,6 +140,7 @@ export default function DayPlanner() {
         end_time:      editForm.end,
         start_minutes: startM,
         end_minutes:   endM,
+        notes:         editForm.notes?.trim() || null,
       });
       const updated = (data.data?.day?.blocks || blocks.map(b => b.id === blockId ? data.data.block : b))
         .sort((a, b) => (a.start_minutes ?? a.startMinutes) - (b.start_minutes ?? b.startMinutes));
@@ -156,6 +159,14 @@ export default function DayPlanner() {
       const { data } = await api.post(`/api/days/${currentDay.date_key}/special-day`);
       setCurrentDay(data.data);
       setWarnings([]);
+    } catch {}
+  }
+
+  async function addSpecialDay() {
+    try {
+      const newTotal = (config.special_days_total || 0) + 1;
+      const { data } = await api.put('/api/config', { special_days_total: newTotal });
+      useStore.getState().setConfig(data.data);
     } catch {}
   }
 
@@ -228,12 +239,21 @@ export default function DayPlanner() {
             );
           })}
         </div>
-        {canActivateSpecial && (
-          <button onClick={activateSpecialDay}
-            className="mt-3 font-cinzel text-[9px] tracking-widest uppercase text-[#c9a254]/70 hover:text-[#c9a254] transition-colors">
-            Activar Día Especial ({config.special_days_total - config.special_days_used_count} restantes)
-          </button>
-        )}
+        <div className="flex items-center justify-between mt-3">
+          {canActivateSpecial && (
+            <button onClick={activateSpecialDay}
+              className="font-cinzel text-[9px] tracking-widest uppercase text-[#c9a254]/70 hover:text-[#c9a254] transition-colors">
+              Activar Día Especial ({config.special_days_total - config.special_days_used_count} restantes)
+            </button>
+          )}
+          {!canActivateSpecial && <span />}
+          {config && (
+            <button onClick={addSpecialDay}
+              className="font-cinzel text-[9px] tracking-widest uppercase text-[#5a4838] hover:text-[#c9a254] transition-colors">
+              + día especial
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Timeline */}
@@ -309,6 +329,16 @@ export default function DayPlanner() {
             </select>
           </div>
         )}
+        <div className="mb-3">
+          <label className="font-cinzel text-[8px] text-[#5a4838] block mb-1.5 tracking-[0.2em] uppercase">Notas (opcional)</label>
+          <textarea
+            value={form.notes}
+            onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))}
+            rows={2}
+            placeholder="¿Qué planeas hacer en este bloque?"
+            className="w-full bg-[#0a0806] rounded px-3 py-2 text-sm text-[#f0e6d0] border border-[#3a2e22] focus:outline-none focus:border-[#c9a254] resize-none placeholder-[#3a2e22] transition-colors"
+          />
+        </div>
         {error && (
           <p className="text-[#8b1a2a] text-xs bg-[#8b1a2a]/10 border border-[#8b1a2a]/30 px-3 py-2 rounded mb-3">
             {error}
@@ -379,6 +409,16 @@ export default function DayPlanner() {
                         </select>
                       </div>
                     )}
+                    <div className="mb-3">
+                      <label className="font-cinzel text-[8px] text-[#5a4838] block mb-1.5 tracking-[0.2em] uppercase">Notas (opcional)</label>
+                      <textarea
+                        value={editForm.notes || ''}
+                        onChange={(e) => setEditForm((f) => ({ ...f, notes: e.target.value }))}
+                        rows={2}
+                        placeholder="¿Qué planeas hacer en este bloque?"
+                        className="w-full bg-[#0a0806] rounded px-3 py-2 text-sm text-[#f0e6d0] border border-[#3a2e22] focus:outline-none focus:border-[#c9a254] resize-none placeholder-[#3a2e22] transition-colors"
+                      />
+                    </div>
                     <div className="flex gap-2">
                       <button
                         onClick={() => saveEdit(b.id)}
@@ -411,6 +451,9 @@ export default function DayPlanner() {
                     </div>
                     {proj && (
                       <p className="text-[#5a4838] text-xs mt-0.5 truncate">{proj.name}</p>
+                    )}
+                    {b.notes && (
+                      <p className="text-[#9a8470] text-xs mt-1 italic leading-snug">{b.notes}</p>
                     )}
                   </div>
                   <div className="flex gap-2 ml-3 shrink-0">
@@ -445,12 +488,18 @@ export default function DayPlanner() {
           {warnings.map((w, i) => (
             <p key={i} className="text-[#9a8470] text-sm">• {w}</p>
           ))}
-          {canActivateSpecial && (
-            <button onClick={activateSpecialDay}
-              className="mt-3 font-cinzel text-[9px] tracking-widest uppercase text-[#c9a254]/70 hover:text-[#c9a254] transition-colors">
-              Activar Día Especial para continuar
+          <div className="flex items-center gap-4 mt-3">
+            {canActivateSpecial && (
+              <button onClick={activateSpecialDay}
+                className="font-cinzel text-[9px] tracking-widest uppercase text-[#c9a254]/70 hover:text-[#c9a254] transition-colors">
+                Activar Día Especial para continuar
+              </button>
+            )}
+            <button onClick={addSpecialDay}
+              className="font-cinzel text-[9px] tracking-widest uppercase text-[#5a4838] hover:text-[#c9a254] transition-colors">
+              + día especial
             </button>
-          )}
+          </div>
         </div>
       )}
 
