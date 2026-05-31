@@ -1,0 +1,37 @@
+{
+  "manifest_version": 3,
+  "name": "Focus Browser",
+  "version": "1.0.0",
+  "description": "Terminal de navegación intencional. Navega con propósito, no por impulso.",
+  "chrome_url_overrides": {
+    "newtab": "newtab.html"
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Focus Browser"
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "permissions": [
+    "storage",
+    "tabs",
+    "declarativeNetRequest"
+  ],
+  "host_permissions": [
+    "https://www.youtube.com/*",
+    "https://youtube.com/*",
+    "https://www.reddit.com/*",
+    "https://reddit.com/*",
+    "https://twitter.com/*",
+    "https://x.com/*",
+    "https://www.instagram.com/*",
+    "https://instagram.com/*",
+    "https://www.tiktok.com/*",
+    "https://tiktok.com/*",
+    "https://www.facebook.com/*",
+    "https://facebook.com/*",
+    "https://www.netflix.com/*",
+    "https://netflix.com/*"
+  ]
+}
