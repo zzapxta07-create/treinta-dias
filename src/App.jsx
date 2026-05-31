@@ -17,6 +17,7 @@ import DayComplete   from './components/screens/DayComplete';
 import History       from './components/screens/History';
 import Projects      from './components/screens/Projects';
 import Habits        from './components/screens/Habits';
+import WeeklyPlanner from './components/screens/WeeklyPlanner';
 
 function Spinner() {
   return (
@@ -80,6 +81,7 @@ export default function App() {
     history:  <History />,
     projects: <Projects />,
     habits:   <Habits />,
+    weekly:   <WeeklyPlanner />,
   };
   if (navScreen && NAV_SCREENS[navScreen]) {
     return (

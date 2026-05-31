@@ -27,6 +27,7 @@ export default function DayClose() {
   const [emotionalState,  setEmotionalState]  = useState(5);
   const [projectProgress, setProjectProgress] = useState({});
   const [binaryDone,      setBinaryDone]      = useState({});
+  const [closeSummary,    setCloseSummary]    = useState('');
   const [saving,          setSaving]          = useState(false);
 
   useEffect(() => {
@@ -65,6 +66,7 @@ export default function DayClose() {
         emotional_state:  emotionalState,
         close_photo_path: photo,
         project_progress: merged,
+        close_summary:    closeSummary.trim() || null,
       });
       setCurrentDay(data.data);
     } finally {
@@ -149,6 +151,21 @@ export default function DayClose() {
           </div>
         </div>
       )}
+
+      {/* Close summary */}
+      <div className="bg-[#110d0a] rounded-lg p-4 mb-4 border border-[#3a2e22]">
+        <SectionTitle>Crónica del Día</SectionTitle>
+        <p className="text-[#5a4838] text-xs mb-3">
+          Escribe qué lograste hoy, qué aprendiste o qué harías diferente.
+        </p>
+        <textarea
+          value={closeSummary}
+          onChange={(e) => setCloseSummary(e.target.value)}
+          rows={4}
+          placeholder="Hoy logré..."
+          className="w-full bg-[#0a0806] text-[#f0e6d0] text-sm rounded px-3 py-2.5 outline-none border border-[#3a2e22] focus:border-[#c9a254] resize-none placeholder-[#3a2e22] transition-colors"
+        />
+      </div>
 
       <div className="fixed bottom-0 left-0 right-0 md:left-60 p-4 bg-[#0a0806]/95 border-t border-[#3a2e22]">
         <button

@@ -167,6 +167,17 @@ function DayDetail({ dateKey, onClose }) {
                   const evidence = (day.evidences || []).find(e => e.block_id === block.id);
                   return <BlockDetail key={block.id} block={block} evidence={evidence} />;
                 })}
+
+              {day.close_summary && (
+                <div className="mt-4 bg-[#110d0a] rounded-lg p-3 border border-[#3a2e22]">
+                  <p className="font-cinzel text-[9px] text-[#5a4838] uppercase tracking-[0.2em] mb-2">
+                    Crónica del Día
+                  </p>
+                  <p className="text-[#9a8470] text-sm leading-relaxed whitespace-pre-wrap">
+                    {day.close_summary}
+                  </p>
+                </div>
+              )}
             </>
           )}
         </div>
