@@ -22,6 +22,10 @@ export default function App() {
 
   // Called from Terminal when a URL should be opened
   function handleOpenUrl(url, meta) {
+    if (meta?.noFriction) {
+      window.location.href = url;
+      return;
+    }
     setPendingUrl(url);
     setPendingMeta(meta);
     setPhase('intent');

@@ -18,6 +18,8 @@ import History       from './components/screens/History';
 import Projects      from './components/screens/Projects';
 import Habits        from './components/screens/Habits';
 import WeeklyPlanner from './components/screens/WeeklyPlanner';
+import Notes         from './components/screens/Notes';
+import Tasks         from './components/screens/Tasks';
 
 function Spinner() {
   return (
@@ -82,6 +84,8 @@ export default function App() {
     projects: <Projects />,
     habits:   <Habits />,
     weekly:   <WeeklyPlanner />,
+    notes:    <Notes />,
+    tasks:    <Tasks />,
   };
   if (navScreen && NAV_SCREENS[navScreen]) {
     return (

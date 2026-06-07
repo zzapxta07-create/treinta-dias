@@ -1,16 +1,19 @@
 export const DEFAULT_COMMANDS = {
-  google:   'https://google.com',
-  youtube:  'https://youtube.com',
-  github:   'https://github.com',
-  chatgpt:  'https://chatgpt.com',
-  docs:     'https://docs.google.com',
-  notion:   'https://notion.so',
-  calendar: 'https://calendar.google.com',
-  gmail:    'https://mail.google.com',
+  google:       'https://google.com',
+  youtube:      'https://youtube.com',
+  github:       'https://github.com',
+  chatgpt:      'https://chatgpt.com',
+  docs:         'https://docs.google.com',
+  notion:       'https://notion.so',
+  calendar:     'https://calendar.google.com',
+  gmail:        'https://mail.google.com',
+  'logic-life': 'https://treinta-dias.vercel.app/',
 };
 
+// Commands that bypass the intention gate and loading screen entirely
+export const NO_FRICTION_COMMANDS = new Set(['logic-life']);
+
 export const DEFAULT_DISTRACTORS = [
-  'youtube.com',
   'reddit.com',
   'twitter.com',
   'x.com',

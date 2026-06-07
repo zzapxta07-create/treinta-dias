@@ -3,7 +3,7 @@ import { t } from '../i18n/index.js';
 import { parseCommand } from './commandParser.js';
 import {
   DEFAULT_COMMANDS, DEFAULT_DISTRACTORS,
-  BUILTIN_COMMANDS, isValidUrl, isDistractorUrl,
+  BUILTIN_COMMANDS, NO_FRICTION_COMMANDS, isValidUrl, isDistractorUrl,
 } from './commandRegistry.js';
 import {
   loadCustomCommands, saveCommand, removeCommand, countCustomCommands,
@@ -110,7 +110,7 @@ export default function Terminal({ onOpenUrl }) {
         const allCmds = { ...DEFAULT_COMMANDS, ...customCmds };
         const url = allCmds[name];
         if (!url) { appendLines([err(T.terminal.commandNotFound(name))]); break; }
-        onOpenUrl(url, { command: name, type: 'open', isDistractor: isDistractorUrl(url) });
+        onOpenUrl(url, { command: name, type: 'open', isDistractor: isDistractorUrl(url), noFriction: NO_FRICTION_COMMANDS.has(name) });
         break;
       }
 
@@ -264,7 +264,16 @@ export default function Terminal({ onOpenUrl }) {
 
   // ── Input handlers ─────────────────────────────────────────────────────
 
-  function handlePaste(e)       { e.preventDefault(); appendLines([dim(t().terminal.pasteBlocked)]); }
+  function handlePaste(e) {
+    const text = e.clipboardData?.getData('text')?.trim();
+    if (!text) return;
+    const isUrl = text.startsWith('http://') || text.startsWith('https://') || /^[\w-]+\.[a-z]{2,}(\/|$)/i.test(text);
+    if (isUrl) {
+      e.preventDefault();
+      setInputVal('visit ' + text);
+      setHistIdx(-1);
+    }
+  }
   function handleContextMenu(e) { e.preventDefault(); }
 
   function handleKeyDown(e) {

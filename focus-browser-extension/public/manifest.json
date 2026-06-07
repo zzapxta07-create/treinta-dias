@@ -16,7 +16,17 @@
   "permissions": [
     "storage",
     "tabs",
-    "declarativeNetRequest"
+    "alarms",
+    "declarativeNetRequest",
+    "declarativeNetRequestWithHostAccess"
+  ],
+  "content_scripts": [
+    {
+      "matches": ["https://www.youtube.com/*", "https://youtube.com/*"],
+      "js": ["content-youtube.js"],
+      "run_at": "document_start",
+      "world": "MAIN"
+    }
   ],
   "host_permissions": [
     "https://www.youtube.com/*",

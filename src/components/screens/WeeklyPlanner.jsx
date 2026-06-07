@@ -7,7 +7,7 @@ const DAY_ABBR = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
 
 const AREA_HEX = {
   NEGOCIO: '#3B82F6', SEGUNDA: '#A855F7', ESTUDIO: '#F59E0B',
-  EJERCICIO: '#10B981', OTROS: '#9a8470',
+  EJERCICIO: '#10B981', OTROS: '#9a8470', PERSONAL: '#EC4899',
 };
 
 function getMondayOf(date) {
@@ -100,31 +100,37 @@ function BlockForm({ onSave, onCancel, initialValues = {} }) {
   );
 }
 
-function DayColumn({ dayIndex, dayDate, blocks, planId, onPlanChange, isToday, isPast }) {
+function DayColumn({ dayIndex, dayDate, dayId, dayBlocks, dateKey, onReload, isToday, isPast }) {
   const [addingBlock, setAddingBlock] = useState(false);
   const [editingId,   setEditingId]   = useState(null);
-  const dayBlocks = (blocks || []).filter(b => b.day_of_week === dayIndex)
-    .sort((a, b) => a.start_minutes - b.start_minutes);
+  const sorted = [...(dayBlocks || [])].sort((a, b) => a.start_minutes - b.start_minutes);
+
+  async function ensureDayId() {
+    if (dayId) return dayId;
+    const { data } = await api.post(`/api/days/ensure/${dateKey}`);
+    return data.data.id;
+  }
 
   async function handleAdd(values) {
-    await api.post(`/api/weekly-plans/${planId}/blocks`, { ...values, day_of_week: dayIndex });
+    const id = await ensureDayId();
+    await api.post('/api/blocks', { ...values, day_id: id, sort_order: sorted.length });
     setAddingBlock(false);
-    onPlanChange();
+    onReload();
   }
 
   async function handleEdit(blockId, values) {
-    await api.put(`/api/weekly-plans/blocks/${blockId}`, values);
+    await api.put(`/api/blocks/${blockId}`, values);
     setEditingId(null);
-    onPlanChange();
+    onReload();
   }
 
   async function handleDelete(blockId) {
-    await api.delete(`/api/weekly-plans/blocks/${blockId}`);
-    onPlanChange();
+    await api.delete(`/api/blocks/${blockId}`);
+    onReload();
   }
 
   return (
-    <div className={`flex-1 min-w-0 ${isToday ? 'ring-1 ring-[#c9a254]/30 rounded-lg' : ''}`}>
+    <div className={`flex-none w-[160px] ${isToday ? 'ring-1 ring-[#c9a254]/30 rounded-lg' : ''}`}>
       <div className={`text-center py-2 px-1 rounded-t-lg mb-2 ${isToday ? 'bg-[#c9a254]/10' : 'bg-[#110d0a]'}`}>
         <p className={`font-cinzel text-[8px] uppercase tracking-[0.15em] ${
           isToday ? 'text-[#c9a254]' : isPast ? 'text-[#3a2e22]' : 'text-[#5a4838]'
@@ -135,7 +141,7 @@ function DayColumn({ dayIndex, dayDate, blocks, planId, onPlanChange, isToday, i
       </div>
 
       <div className="flex flex-col gap-1 px-1 min-h-[60px]">
-        {dayBlocks.map(b => (
+        {sorted.map(b => (
           <div key={b.id}>
             {editingId === b.id ? (
               <BlockForm
@@ -184,23 +190,30 @@ function DayColumn({ dayIndex, dayDate, blocks, planId, onPlanChange, isToday, i
 
 export default function WeeklyPlanner() {
   const [weekOffset, setWeekOffset] = useState(0);
-  const [plan,       setPlan]       = useState(null);
+  const [weekDays,   setWeekDays]   = useState([]);  // array of 7 {dateKey, id, blocks}
+  const [notes,      setNotes]      = useState('');
+  const [planId,     setPlanId]     = useState(null);
   const [loading,    setLoading]    = useState(true);
 
   const monday    = getMondayOf(addDays(new Date(), weekOffset * 7));
   const weekDates = Array.from({ length: 7 }, (_, i) => addDays(monday, i));
   const todayKey  = dateKeyOf(new Date());
 
-  async function loadPlan() {
+  async function loadWeek() {
     setLoading(true);
     try {
-      const { data } = await api.get(`/api/weekly-plans/week/${dateKeyOf(monday)}`);
-      setPlan(data.data);
+      const [daysRes, planRes] = await Promise.all([
+        api.get(`/api/days/week/${dateKeyOf(monday)}`),
+        api.get(`/api/weekly-plans/week/${dateKeyOf(monday)}`),
+      ]);
+      setWeekDays(daysRes.data.data || []);
+      setNotes(planRes.data.data?.notes || '');
+      setPlanId(planRes.data.data?.id || null);
     } catch {}
     setLoading(false);
   }
 
-  useEffect(() => { loadPlan(); }, [weekOffset]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { loadWeek(); }, [weekOffset]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const weekLabel = (() => {
     const end = addDays(monday, 6);
@@ -246,45 +259,43 @@ export default function WeeklyPlanner() {
         <div className="flex-1 h-px bg-[#3a2e22]" />
       </div>
 
-      {plan && (
-        <div className="flex gap-2 overflow-x-auto pb-2">
-          {weekDates.map((date, i) => {
-            const dateKey = dateKeyOf(date);
-            return (
-              <DayColumn
-                key={i}
-                dayIndex={i}
-                dayDate={date}
-                blocks={plan.blocks || []}
-                planId={plan.id}
-                onPlanChange={loadPlan}
-                isToday={dateKey === todayKey}
-                isPast={dateKey < todayKey}
-              />
-            );
-          })}
-        </div>
-      )}
+      <div className="flex gap-2 overflow-x-auto pb-2">
+        {weekDates.map((date, i) => {
+          const dateKey = dateKeyOf(date);
+          const dayData = weekDays.find(d => d.dateKey === dateKey) || {};
+          return (
+            <DayColumn
+              key={i}
+              dayIndex={i}
+              dayDate={date}
+              dayId={dayData.id || null}
+              dayBlocks={dayData.blocks || []}
+              dateKey={dateKey}
+              onReload={loadWeek}
+              isToday={dateKey === todayKey}
+              isPast={dateKey < todayKey}
+            />
+          );
+        })}
+      </div>
 
-      {plan && (
-        <div className="mt-6">
-          <SectionTitle>Notas de la Semana</SectionTitle>
-          <textarea
-            defaultValue={plan.notes || ''}
-            onBlur={async (e) => {
-              if (e.target.value !== (plan.notes || '')) {
-                try {
-                  const { data } = await api.put(`/api/weekly-plans/${plan.id}`, { notes: e.target.value });
-                  setPlan(data.data);
-                } catch {}
-              }
-            }}
-            rows={3}
-            placeholder="Objetivos semanales, contexto, notas..."
-            className="w-full bg-[#110d0a] rounded px-3 py-2.5 text-sm text-[#f0e6d0] border border-[#3a2e22] focus:outline-none focus:border-[#c9a254] resize-none placeholder-[#3a2e22] transition-colors"
-          />
-        </div>
-      )}
+      <div className="mt-6">
+        <SectionTitle>Notas de la Semana</SectionTitle>
+        <textarea
+          value={notes}
+          onChange={e => setNotes(e.target.value)}
+          onBlur={async (e) => {
+            if (planId) {
+              try {
+                await api.put(`/api/weekly-plans/${planId}`, { notes: e.target.value });
+              } catch {}
+            }
+          }}
+          rows={3}
+          placeholder="Objetivos semanales, contexto, notas..."
+          className="w-full bg-[#110d0a] rounded px-3 py-2.5 text-sm text-[#f0e6d0] border border-[#3a2e22] focus:outline-none focus:border-[#c9a254] resize-none placeholder-[#3a2e22] transition-colors"
+        />
+      </div>
 
       <div className="mt-4 flex flex-wrap gap-3">
         {Object.entries(AREA_HEX).map(([id, color]) => (

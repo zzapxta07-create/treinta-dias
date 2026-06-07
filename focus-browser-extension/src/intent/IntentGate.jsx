@@ -1,8 +1,8 @@
 import { useState, useRef, useEffect } from 'react';
 import { t } from '../i18n/index.js';
-import { validateEssay, countWords } from './intentValidator.js';
+import { validateEssay, countChars } from './intentValidator.js';
 
-const MIN_WORDS = 50;
+const MIN_CHARS = 120;
 
 export default function IntentGate({ url, onApproved, onCancel }) {
   const [text,    setText]    = useState('');
@@ -11,8 +11,8 @@ export default function IntentGate({ url, onApproved, onCancel }) {
   const textareaRef = useRef(null);
 
   const T = t();
-  const wc = countWords(text);
-  const wcOk = wc >= MIN_WORDS;
+  const wc = countChars(text);
+  const wcOk = wc >= MIN_CHARS;
 
   useEffect(() => { textareaRef.current?.focus(); }, []);
 
@@ -26,10 +26,10 @@ export default function IntentGate({ url, onApproved, onCancel }) {
   }
 
   function handleSubmit() {
-    const result = validateEssay(text, MIN_WORDS);
+    const result = validateEssay(text, MIN_CHARS);
     if (!result.valid) {
       const err = T.intent.errors[result.error];
-      setError(typeof err === 'function' ? err(result.actual, MIN_WORDS) : err);
+      setError(typeof err === 'function' ? err(result.actual, MIN_CHARS) : err);
       return;
     }
     setLoading(true);
@@ -85,7 +85,7 @@ export default function IntentGate({ url, onApproved, onCancel }) {
 
       <div className="fb-intent-footer">
         <span className={`fb-word-count ${wcOk ? 'fb-word-count--ok' : ''}`}>
-          {wcOk ? T.intent.wordCountOk(wc) : T.intent.wordCount(wc) + ` / ${MIN_WORDS}`}
+          {wcOk ? T.intent.wordCountOk(wc) : T.intent.wordCount(wc) + ` / ${MIN_CHARS}`}
         </span>
 
         <button

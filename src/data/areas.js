@@ -29,6 +29,12 @@ export const AREAS = {
     minMinutes: 0,
     color: "gray",
   },
+  PERSONAL: {
+    id: "PERSONAL",
+    label: "Personal",
+    minMinutes: 0,
+    color: "pink",
+  },
 };
 
 export const MANDATORY_AREAS = ["NEGOCIO", "SEGUNDA", "ESTUDIO", "EJERCICIO"];
