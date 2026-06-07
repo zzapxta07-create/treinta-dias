@@ -9,6 +9,7 @@ import { AREAS, MANDATORY_AREAS } from '../../data/areas';
 import ScoreRing from '../ui/ScoreRing';
 import EvidenceInline, { EvidenceForm, NotificationBadge } from '../ui/EvidenceInline';
 import AiChat from '../ui/AiChat';
+import { SectionTitle, DiamondOrnament } from '../ui/Ornaments';
 import api from '../../api/index.js';
 
 const AREA_MINS = { NEGOCIO: 300, SEGUNDA: 60, ESTUDIO: 180, EJERCICIO: 30 };
@@ -16,16 +17,6 @@ const AREA_HEX  = {
   NEGOCIO: '#3B82F6', SEGUNDA: '#A855F7', ESTUDIO: '#F59E0B',
   EJERCICIO: '#10B981', OTROS: '#6B7280',
 };
-
-function SectionTitle({ children }) {
-  return (
-    <div className="flex items-center gap-3 mb-3">
-      <div className="flex-1 h-px bg-[#3a2e22]" />
-      <p className="font-cinzel text-[8px] text-[#5a4838] uppercase tracking-[0.25em] shrink-0">{children}</p>
-      <div className="flex-1 h-px bg-[#3a2e22]" />
-    </div>
-  );
-}
 
 // ── Inline block editor ──────────────────────────────────────────────────────
 function BlockEditRow({ block, projects, onSave, onCancel }) {
@@ -49,28 +40,40 @@ function BlockEditRow({ block, projects, onSave, onCancel }) {
     }
   }
 
+  const inputStyle = {
+    width: '100%',
+    background: '#0c0a14',
+    color: '#f0e6d0',
+    fontSize: '14px',
+    borderRadius: '8px',
+    padding: '8px 12px',
+    border: '1px solid #2c2740',
+    outline: 'none',
+  };
+
   return (
-    <div className="bg-[#201a14] rounded-lg p-3 mb-2 border border-[#3a2e22]">
+    <div className="rounded-xl p-3 mb-2" style={{ background: '#1e1b2e', border: '1px solid #2c2740' }}>
       <div className="flex gap-2 mb-2">
         {[['Inicio', start, setStart], ['Fin', end, setEnd]].map(([lbl, val, setter]) => (
           <div key={lbl} className="flex-1">
-            <p className="font-cinzel text-[8px] text-[#5a4838] tracking-[0.15em] mb-1 uppercase">{lbl}</p>
-            <input type="time" value={val} onChange={(e) => setter(e.target.value)}
-              className="w-full bg-[#110d0a] text-[#f0e6d0] text-sm rounded-lg px-2 py-2 border border-[#3a2e22] focus:border-[#c9a254] outline-none" />
+            <p className="font-cinzel text-[7px] text-[#4d4568] tracking-[0.15em] mb-1 uppercase">{lbl}</p>
+            <input type="time" value={val} onChange={(e) => setter(e.target.value)} style={inputStyle} />
           </div>
         ))}
       </div>
-      <select value={area} onChange={(e) => setArea(e.target.value)}
-        className="w-full bg-[#110d0a] text-[#f0e6d0] text-sm rounded-lg px-2 py-2 border border-[#3a2e22] mb-2 outline-none">
+      <select value={area} onChange={(e) => setArea(e.target.value)} style={{ ...inputStyle, marginBottom: '8px' }}>
         {Object.values(AREAS).map((a) => <option key={a.id} value={a.id}>{a.label}</option>)}
       </select>
-      {err && <p className="text-[#8b1a2a] text-xs mb-2">{err}</p>}
+      {err && <p className="text-[#9b1f30] text-xs mb-2">{err}</p>}
       <div className="flex gap-2">
         <button onClick={handleSave} disabled={saving}
-          className="flex-1 bg-[#c9a254] text-[#0a0806] font-cinzel font-bold text-xs py-2 rounded-lg disabled:opacity-50 active:scale-95 transition-transform tracking-[0.08em]">
+          className="flex-1 font-cinzel font-bold text-xs py-2 rounded-lg disabled:opacity-50 transition-all btn-primary"
+          style={{ fontSize: '10px', letterSpacing: '0.1em', padding: '8px 12px' }}>
           {saving ? '...' : 'GUARDAR'}
         </button>
-        <button onClick={onCancel} className="px-4 text-[#9a8470] text-sm bg-[#110d0a] border border-[#3a2e22] rounded-lg">
+        <button onClick={onCancel}
+          className="px-4 text-[#9490aa] text-sm rounded-lg transition-colors"
+          style={{ background: '#171428', border: '1px solid #2c2740' }}>
           Cancelar
         </button>
       </div>
@@ -146,52 +149,58 @@ export default function Dashboard({ setNavScreen }) {
     setCurrentDay(data.data);
   }
 
+  const panelStyle = {
+    background: 'linear-gradient(135deg, #17142a 0%, #131028 100%)',
+    border: '1px solid #2c2740',
+    borderRadius: '12px',
+    boxShadow: '0 4px 20px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.02)',
+  };
+
   return (
     <div className="min-h-screen px-4 py-5 max-w-7xl mx-auto">
       <AiChat forceOpen={chatOpen} onOpenChange={setChatOpen} />
 
       {/* Header */}
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex items-center justify-between mb-5">
         <div>
-          <p className="font-cinzel text-[#5a4838] text-[9px] tracking-[0.3em] uppercase">
+          <p className="font-cinzel text-[#4d4568] text-[8px] tracking-[0.35em] uppercase">
             {currentDay.date_key?.toString().slice(0, 10)}
           </p>
           {score > 0 && (
-            <p className="font-mono text-[#c9a254] text-xs font-bold mt-0.5">{score} pts</p>
+            <p className="font-mono font-bold mt-0.5 text-xs" style={{ color: '#d4a956' }}>{score} pts</p>
           )}
         </div>
         <div className="flex items-center gap-2">
-          {/* Notification bell */}
-          <div className="relative">
-            <button
-              onClick={() => {
-                const el = document.getElementById('notifications-panel');
-                el?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-              }}
-              className="flex items-center gap-1.5 bg-[#1a1410] border border-[#3a2e22] hover:border-[#8b1a2a]/50 px-3 py-1.5 rounded-lg text-[#5a4838] hover:text-[#9a8470] transition-colors"
-              title="Ver evidencias pendientes"
-            >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
-                stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
-                <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
-              </svg>
-              <NotificationBadge />
-            </button>
-          </div>
+          <button
+            onClick={() => {
+              const el = document.getElementById('notifications-panel');
+              el?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[#4d4568] hover:text-[#9490aa] transition-colors"
+            style={{ background: '#17142a', border: '1px solid #2c2740' }}
+            title="Ver evidencias pendientes"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+              <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+            </svg>
+            <NotificationBadge />
+          </button>
           <button
             onClick={() => setChatOpen(v => !v)}
-            className="flex items-center gap-2 bg-[#1a1410] border border-[#3a2e22] hover:border-[#c9a254] px-3 py-1.5 rounded-lg text-sm text-[#9a8470] hover:text-[#c9a254] transition-colors"
+            className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-[#9490aa] hover:text-[#d4a956] transition-all"
+            style={{ background: '#17142a', border: '1px solid #2c2740' }}
           >
-            <span className="text-[#c9a254] font-bold text-base">✦</span>
-            <span className="font-cinzel text-[11px] tracking-[0.08em]">Coach</span>
+            <span className="font-bold text-base" style={{ color: '#d4a956' }}>✦</span>
+            <span className="font-cinzel text-[10px] tracking-[0.08em]">Coach</span>
           </button>
         </div>
       </div>
 
       {/* Daily phrase */}
       {currentDay.daily_phrase && (
-        <p className="text-[#c9a254] italic text-center mb-5 px-4 opacity-70 text-base">
+        <p className="text-center mb-5 px-4 italic text-base"
+          style={{ color: '#d4a956', opacity: 0.65 }}>
           "{currentDay.daily_phrase}"
         </p>
       )}
@@ -206,16 +215,20 @@ export default function Dashboard({ setNavScreen }) {
 
           {/* Active block hero */}
           {activeBlock ? (
-            <div className="bg-[#1a1410] rounded-xl p-4 border border-[#3a2e22] border-l-4"
-              style={{ borderLeftColor: activeAreaColor }}>
+            <div className="rounded-xl p-4 border-l-4"
+              style={{
+                ...panelStyle,
+                borderLeftColor: activeAreaColor,
+                borderLeft: `4px solid ${activeAreaColor}`,
+              }}>
               <div className="flex items-start justify-between mb-3">
                 <div className="min-w-0">
-                  <p className="font-cinzel text-[9px] font-semibold uppercase tracking-[0.2em] mb-1"
+                  <p className="font-cinzel text-[8px] font-semibold uppercase tracking-[0.2em] mb-1"
                      style={{ color: activeAreaColor }}>En curso</p>
                   <p className="text-[#f0e6d0] font-semibold text-base leading-tight truncate">
                     {activeBlock.project_name || AREAS[areaId]?.label || '—'}
                   </p>
-                  <p className="text-[#9a8470] text-xs font-mono mt-0.5">
+                  <p className="font-mono text-[#9490aa] text-xs mt-0.5">
                     {minutesToTime(activeStart)}–{minutesToTime(activeEnd)}
                   </p>
                 </div>
@@ -223,24 +236,28 @@ export default function Dashboard({ setNavScreen }) {
                   <p className="font-mono text-4xl font-black text-[#f0e6d0] tabular-nums leading-none">
                     {formatTime(now)}
                   </p>
-                  <p className="text-[#9a8470] text-xs mt-1">{minutesToLabel(activeRemain)} restantes</p>
+                  <p className="text-[#9490aa] text-xs mt-1">{minutesToLabel(activeRemain)} restantes</p>
                 </div>
               </div>
-              <div className="h-1 bg-[#3a2e22] rounded-full overflow-hidden mb-3">
+              <div className="h-1 rounded-full overflow-hidden mb-3" style={{ background: '#2c2740' }}>
                 <div className="h-full rounded-full transition-all"
-                  style={{ width: `${activeProgress}%`, backgroundColor: activeAreaColor }} />
+                  style={{
+                    width: `${activeProgress}%`,
+                    backgroundColor: activeAreaColor,
+                    boxShadow: `0 0 8px ${activeAreaColor}60`,
+                  }} />
               </div>
               {areaId !== 'OTROS' && (
                 activeBlockHasEvidence ? (
-                  <p className="font-cinzel text-[10px] tracking-[0.1em] text-center py-2"
+                  <p className="font-cinzel text-[9px] tracking-[0.1em] text-center py-2"
                     style={{ color: activeAreaColor }}>✓ EVIDENCIA ENVIADA</p>
                 ) : (
                   <button onClick={() => setShowEvForm(v => !v)}
-                    className="w-full border text-xs font-cinzel tracking-[0.08em] py-2.5 rounded-lg transition-colors"
+                    className="w-full text-xs font-cinzel tracking-[0.08em] py-2.5 rounded-lg transition-all"
                     style={{
-                      borderColor: showEvForm ? activeAreaColor : '#3a2e22',
-                      color: showEvForm ? activeAreaColor : '#9a8470',
-                      backgroundColor: '#201a14',
+                      border: `1px solid ${showEvForm ? activeAreaColor : '#2c2740'}`,
+                      color: showEvForm ? activeAreaColor : '#9490aa',
+                      background: '#1e1b2e',
                     }}>
                     {showEvForm ? '↑ CERRAR' : '⊕ ADJUNTAR EVIDENCIA'}
                   </button>
@@ -254,36 +271,39 @@ export default function Dashboard({ setNavScreen }) {
               )}
             </div>
           ) : (
-            <div className="bg-[#1a1410] rounded-xl p-4 border border-[#3a2e22]">
-              <p className="font-cinzel text-[#5a4838] text-[9px] tracking-[0.2em] uppercase mb-2">Hora actual</p>
-              <p className="font-mono text-5xl font-black text-[#f0e6d0] tabular-nums">{formatTime(now)}</p>
+            <div className="rounded-xl p-4" style={panelStyle}>
+              <p className="font-cinzel text-[#4d4568] text-[8px] tracking-[0.2em] uppercase mb-2">Hora actual</p>
+              <p className="font-mono text-5xl font-black text-[#f0e6d0] tabular-nums"
+                style={{ textShadow: '0 0 20px rgba(212,169,86,0.1)' }}>
+                {formatTime(now)}
+              </p>
               {upcomingBlocks.length > 0 ? (
-                <p className="text-[#9a8470] text-sm mt-2">
-                  Próximo: {minutesToTime(upcomingBlocks[0].start_minutes ?? upcomingBlocks[0].startMinutes)}
+                <p className="text-[#9490aa] text-sm mt-2">
+                  Próximo: <span className="font-mono text-[#d4a956]">{minutesToTime(upcomingBlocks[0].start_minutes ?? upcomingBlocks[0].startMinutes)}</span>
                 </p>
               ) : (
-                <p className="text-[#5a4838] text-sm mt-2">Sin bloques próximos</p>
+                <p className="text-[#4d4568] text-sm mt-2">Sin bloques próximos</p>
               )}
             </div>
           )}
 
           {/* Upcoming blocks */}
           {upcomingBlocks.length > 0 && (
-            <div className="bg-[#1a1410] rounded-xl p-4 border border-[#3a2e22]">
+            <div className="rounded-xl p-4" style={panelStyle}>
               <SectionTitle>Próximos bloques</SectionTitle>
               <div className="flex flex-col">
                 {upcomingBlocks.map((b) => {
                   const bc = AREA_HEX[b.area_id || b.area] || '#6B7280';
                   return (
-                    <div key={b.id} className="flex items-center gap-3 py-2 border-b border-[#201a14] last:border-0">
+                    <div key={b.id} className="flex items-center gap-3 py-2.5" style={{ borderBottom: '1px solid #1e1b2e' }}>
                       <p className="font-mono text-sm text-[#f0e6d0] w-10 shrink-0">
                         {minutesToTime(b.start_minutes ?? b.startMinutes)}
                       </p>
-                      <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: bc }} />
-                      <p className="text-[#9a8470] text-sm truncate flex-1">
+                      <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: bc, boxShadow: `0 0 4px ${bc}80` }} />
+                      <p className="text-[#9490aa] text-sm truncate flex-1">
                         {b.project_name || AREAS[b.area_id || b.area]?.label || '—'}
                       </p>
-                      <p className="text-[#5a4838] text-xs shrink-0">
+                      <p className="text-[#4d4568] text-xs shrink-0">
                         {minutesToLabel((b.end_minutes ?? b.endMinutes) - (b.start_minutes ?? b.startMinutes))}
                       </p>
                     </div>
@@ -295,24 +315,26 @@ export default function Dashboard({ setNavScreen }) {
 
           {/* Block manager */}
           {allBlocks.length > 0 && (
-            <div className="bg-[#1a1410] rounded-xl border border-[#3a2e22]">
+            <div className="rounded-xl" style={panelStyle}>
               <button onClick={() => setShowBlockManager(v => !v)}
-                className="w-full flex items-center justify-between px-4 py-3">
-                <p className="font-cinzel text-[8px] text-[#9a8470] uppercase tracking-[0.2em]">
-                  Reprogramar
-                </p>
+                className="w-full flex items-center justify-between px-4 py-3 hover:opacity-80 transition-opacity">
+                <p className="font-cinzel text-[8px] text-[#9490aa] uppercase tracking-[0.2em]">Reprogramar</p>
                 <div className="flex items-center gap-2">
                   {editCount > 0 && (
-                    <span className="font-mono text-[9px] text-[#c9a254] bg-[#c9a254]/10 px-2 py-0.5 rounded border border-[#c9a254]/20">
+                    <span className="font-mono text-[8px] px-2 py-0.5 rounded" style={{
+                      color: '#d4a956',
+                      background: 'rgba(212,169,86,0.1)',
+                      border: '1px solid rgba(212,169,86,0.2)',
+                    }}>
                       {editCount} edic.
                     </span>
                   )}
-                  <span className="text-[#5a4838] text-xs">{showBlockManager ? '↑' : '↓'}</span>
+                  <span className="text-[#4d4568] text-xs">{showBlockManager ? '↑' : '↓'}</span>
                 </div>
               </button>
               {showBlockManager && (
-                <div className="px-4 pb-3 border-t border-[#201a14]">
-                  <p className="font-cinzel text-[8px] text-[#5a4838] tracking-[0.15em] uppercase mt-3 mb-2">
+                <div className="px-4 pb-3" style={{ borderTop: '1px solid #2c2740' }}>
+                  <p className="font-cinzel text-[7px] text-[#4d4568] tracking-[0.15em] uppercase mt-3 mb-2">
                     Cada cambio queda registrado
                   </p>
                   {allBlocks.map((b) => {
@@ -325,14 +347,15 @@ export default function Dashboard({ setNavScreen }) {
                         onSave={handleBlockEdit} onCancel={() => setEditingBlockId(null)} />;
                     }
                     return (
-                      <div key={b.id} className="flex items-center gap-2 py-2.5 border-b border-[#201a14] last:border-0">
+                      <div key={b.id} className="flex items-center gap-2 py-2.5"
+                        style={{ borderBottom: '1px solid #1e1b2e' }}>
                         <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: bc }} />
                         <p className="font-mono text-xs text-[#f0e6d0] shrink-0">{minutesToTime(s)}–{minutesToTime(e)}</p>
-                        <p className="text-[#9a8470] text-sm truncate flex-1">
+                        <p className="text-[#9490aa] text-sm truncate flex-1">
                           {proj?.name || AREAS[b.area_id || b.area]?.label || b.area_id}
                         </p>
                         <button onClick={() => setEditingBlockId(b.id)}
-                          className="text-[#5a4838] hover:text-[#c9a254] text-sm transition-colors shrink-0 px-1">✎</button>
+                          className="text-[#4d4568] hover:text-[#d4a956] text-sm transition-colors shrink-0 px-1">✎</button>
                       </div>
                     );
                   })}
@@ -343,7 +366,20 @@ export default function Dashboard({ setNavScreen }) {
 
           {/* Close day */}
           <button onClick={handleCloseDay}
-            className="w-full bg-[#1a1410] border border-[#3a2e22] text-[#9a8470] hover:text-[#f0e6d0] hover:border-[#5a4838] py-3 rounded-xl font-cinzel text-[11px] tracking-[0.1em] transition-colors">
+            className="w-full py-3 rounded-xl font-cinzel text-[10px] tracking-[0.12em] transition-all"
+            style={{
+              background: '#17142a',
+              border: '1px solid #2c2740',
+              color: '#9490aa',
+            }}
+            onMouseEnter={e => {
+              e.currentTarget.style.color = '#f0e6d0';
+              e.currentTarget.style.borderColor = '#3e3858';
+            }}
+            onMouseLeave={e => {
+              e.currentTarget.style.color = '#9490aa';
+              e.currentTarget.style.borderColor = '#2c2740';
+            }}>
             CERRAR EL DÍA →
           </button>
         </div>
@@ -352,12 +388,15 @@ export default function Dashboard({ setNavScreen }) {
         <div className="md:w-[58%] flex flex-col gap-3">
 
           {/* Score */}
-          <div className="bg-[#1a1410] rounded-xl p-4 border border-[#3a2e22] flex items-center gap-5">
+          <div className="rounded-xl p-4 flex items-center gap-5" style={panelStyle}>
             <ScoreRing score={score} max={100} size={100} />
-            <div>
+            <div className="flex-1">
               <SectionTitle>Score del día</SectionTitle>
-              <p className="font-mono text-[#c9a254] text-4xl font-black">{score}</p>
-              <p className="font-cinzel text-[#5a4838] text-[9px] tracking-[0.15em]">/ 100 PUNTOS</p>
+              <p className="font-mono text-4xl font-black"
+                style={{ color: '#d4a956', textShadow: '0 0 20px rgba(212,169,86,0.25)' }}>
+                {score}
+              </p>
+              <p className="font-cinzel text-[#4d4568] text-[8px] tracking-[0.15em]">/ 100 PUNTOS</p>
               {config && (
                 <div className="mt-3 flex flex-wrap gap-2">
                   {[
@@ -365,7 +404,8 @@ export default function Dashboard({ setNavScreen }) {
                     ['Especiales', config.special_days_total - config.special_days_used_count],
                     ['Replanes', config.replan_days_total - config.replan_days_used_count],
                   ].map(([lbl, val]) => (
-                    <span key={lbl} className="font-cinzel text-[8px] text-[#9a8470] bg-[#201a14] border border-[#3a2e22] px-2 py-0.5 rounded tracking-[0.05em]">
+                    <span key={lbl} className="font-cinzel text-[7px] text-[#9490aa] px-2 py-0.5 rounded tracking-[0.05em]"
+                      style={{ background: '#1e1b2e', border: '1px solid #2c2740' }}>
                       {lbl}: {val}
                     </span>
                   ))}
@@ -375,7 +415,7 @@ export default function Dashboard({ setNavScreen }) {
           </div>
 
           {/* Area minimums */}
-          <div className="bg-[#1a1410] rounded-xl p-4 border border-[#3a2e22]">
+          <div className="rounded-xl p-4" style={panelStyle}>
             <SectionTitle>Mínimos del día</SectionTitle>
             <div className="flex flex-col gap-3">
               {MANDATORY_AREAS.map((id) => {
@@ -386,16 +426,20 @@ export default function Dashboard({ setNavScreen }) {
                 return (
                   <div key={id}>
                     <div className="flex justify-between mb-1.5">
-                      <span className={`text-sm ${ok ? 'text-[#c9a254]' : 'text-[#9a8470]'}`}>
+                      <span className={`text-sm ${ok ? 'text-[#d4a956]' : 'text-[#9490aa]'}`}>
                         {ok ? '✓ ' : ''}{area.label}
                       </span>
-                      <span className={`font-mono text-xs ${ok ? 'text-[#c9a254]' : 'text-[#5a4838]'}`}>
+                      <span className={`font-mono text-xs ${ok ? 'text-[#d4a956]' : 'text-[#4d4568]'}`}>
                         {minutesToLabel(done)} / {minutesToLabel(AREA_MINS[id])}
                       </span>
                     </div>
-                    <div className="h-1 bg-[#3a2e22] rounded-full overflow-hidden">
+                    <div className="h-1 rounded-full overflow-hidden" style={{ background: '#2c2740' }}>
                       <div className="h-full rounded-full transition-all"
-                        style={{ width: `${pct}%`, backgroundColor: ok ? '#c9a254' : AREA_HEX[id] }} />
+                        style={{
+                          width: `${pct}%`,
+                          backgroundColor: ok ? '#d4a956' : AREA_HEX[id],
+                          boxShadow: ok ? '0 0 6px rgba(212,169,86,0.3)' : 'none',
+                        }} />
                     </div>
                   </div>
                 );
@@ -405,19 +449,21 @@ export default function Dashboard({ setNavScreen }) {
 
           {/* 7-day chart */}
           {chartData.length > 0 && (
-            <div className="bg-[#1a1410] rounded-xl p-4 border border-[#3a2e22]">
+            <div className="rounded-xl p-4" style={panelStyle}>
               <SectionTitle>Últimos 7 días</SectionTitle>
               <ResponsiveContainer width="100%" height={72}>
                 <BarChart data={chartData} barSize={14}>
-                  <XAxis dataKey="date" tick={{ fill: '#5a4838', fontSize: 10, fontFamily: 'Cinzel' }} axisLine={false} tickLine={false} />
+                  <XAxis dataKey="date" tick={{ fill: '#4d4568', fontSize: 10, fontFamily: 'Cinzel' }} axisLine={false} tickLine={false} />
                   <YAxis domain={[0, 100]} hide />
-                  <Tooltip contentStyle={{ background: '#1a1410', border: '1px solid #3a2e22', borderRadius: 8 }}
+                  <Tooltip
+                    contentStyle={{ background: '#1e1b2e', border: '1px solid #2c2740', borderRadius: 8 }}
                     labelStyle={{ color: '#f0e6d0', fontSize: 11 }}
-                    itemStyle={{ color: '#c9a254', fontSize: 11 }}
-                    formatter={(v) => [`${v} pts`]} />
+                    itemStyle={{ color: '#d4a956', fontSize: 11 }}
+                    formatter={(v) => [`${v} pts`]}
+                  />
                   <Bar dataKey="score" radius={3}>
                     {chartData.map((d, i) => (
-                      <Cell key={i} fill={d.score >= 70 ? '#c9a254' : d.score >= 40 ? '#9a8470' : '#8b1a2a'} />
+                      <Cell key={i} fill={d.score >= 70 ? '#d4a956' : d.score >= 40 ? '#9490aa' : '#9b1f30'} />
                     ))}
                   </Bar>
                 </BarChart>

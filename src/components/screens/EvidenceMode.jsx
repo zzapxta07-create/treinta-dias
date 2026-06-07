@@ -6,6 +6,26 @@ import { AREAS } from '../../data/areas';
 import { minutesToTime } from '../../utils/dateUtils';
 import api from '../../api/index.js';
 
+const panelStyle = {
+  background: 'linear-gradient(135deg, #17142a 0%, #110e1c 100%)',
+  border: '1px solid #2c2740',
+  borderRadius: '12px',
+};
+
+const inputStyle = {
+  width: '100%',
+  background: '#09080e',
+  color: '#f0e6d0',
+  border: '1px solid #2c2740',
+  borderRadius: '8px',
+  padding: '10px 12px',
+  outline: 'none',
+  resize: 'none',
+  fontFamily: "'Crimson Text', serif",
+  fontSize: '14px',
+  transition: 'border-color 0.2s',
+};
+
 export default function EvidenceMode() {
   const evidenceTimer      = useStore((s) => s.evidenceTimer);
   const currentDay         = useStore((s) => s.currentDay);
@@ -70,37 +90,46 @@ export default function EvidenceMode() {
 
   if (showNoHice) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-[#0a0806] px-6 py-10">
+      <div className="min-h-screen flex flex-col items-center justify-center px-6 py-10"
+        style={{ background: '#09080e' }}>
         <div className="fixed inset-0 pointer-events-none"
           style={{ background: 'radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,0.6) 100%)' }} />
 
         <div className="relative w-full max-w-sm">
-          <div className="inline-flex items-center justify-center w-14 h-14 rounded-full border border-[#8b1a2a]/40 bg-[#110d0a] mb-5">
-            <span className="text-[#8b1a2a] text-2xl">✕</span>
+          <div className="inline-flex items-center justify-center w-14 h-14 rounded-full mb-5"
+            style={{ border: '1px solid rgba(155,31,48,0.4)', background: '#110e1c' }}>
+            <span style={{ color: '#9b1f30', fontSize: '22px' }}>✕</span>
           </div>
-          <h2 className="font-cinzel text-xl font-bold text-[#f0e6d0] tracking-[0.06em] mb-2">
+          <h2 className="font-cinzel text-xl font-bold tracking-[0.06em] mb-2" style={{ color: '#f0e6d0' }}>
             ¿Por qué no?
           </h2>
-          <p className="text-[#9a8470] text-sm mb-5">El caballero debe rendir cuentas. Mínimo 20 caracteres.</p>
+          <p className="text-sm mb-5" style={{ color: '#9490aa' }}>El caballero debe rendir cuentas. Mínimo 20 caracteres.</p>
 
           <textarea
             value={reason}
             onChange={(e) => setReason(e.target.value)}
             rows={4}
             placeholder="Explicá qué pasó..."
-            className="w-full bg-[#110d0a] rounded px-4 py-3 text-sm text-[#f0e6d0] placeholder-[#3a2e22] border border-[#3a2e22] focus:outline-none focus:border-[#8b1a2a] resize-none mb-2 transition-colors"
+            style={{ ...inputStyle, marginBottom: '8px' }}
+            onFocus={e => { e.target.style.borderColor = '#9b1f30'; }}
+            onBlur={e => { e.target.style.borderColor = '#2c2740'; }}
           />
-          <p className="text-[#3a2e22] text-xs mb-5 text-right font-mono">{reason.length} / 20 mínimo</p>
+          <p className="text-xs mb-5 text-right font-mono" style={{ color: '#2c2740' }}>{reason.length} / 20 mínimo</p>
+
           <button
             onClick={handleSubmitNoHice}
             disabled={reason.trim().length < 20 || saving}
-            className="w-full font-cinzel font-bold bg-[#8b1a2a] text-[#f0e6d0] py-4 rounded text-sm tracking-[0.12em] uppercase disabled:opacity-30 active:scale-95 transition-transform"
+            className="w-full font-cinzel font-bold py-4 rounded text-sm tracking-[0.12em] uppercase active:scale-95 disabled:opacity-30 transition-transform"
+            style={{ background: '#9b1f30', color: '#f0e6d0' }}
           >
             {saving ? 'Guardando...' : 'Confirmar — No Hice Nada'}
           </button>
           <button
             onClick={() => setShowNoHice(false)}
-            className="w-full mt-3 font-cinzel text-[9px] text-[#5a4838] tracking-widest uppercase hover:text-[#9a8470] transition-colors"
+            className="w-full mt-3 font-cinzel text-[9px] tracking-widest uppercase transition-colors"
+            style={{ color: '#4d4568' }}
+            onMouseOver={e => { e.currentTarget.style.color = '#9490aa'; }}
+            onMouseOut={e => { e.currentTarget.style.color = '#4d4568'; }}
           >
             Volver
           </button>
@@ -110,20 +139,24 @@ export default function EvidenceMode() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col px-4 py-5 max-w-lg mx-auto bg-[#0a0806]">
+    <div className="min-h-screen flex flex-col px-4 py-5 max-w-lg mx-auto" style={{ background: '#09080e' }}>
+      <div className="fixed inset-0 pointer-events-none"
+        style={{ background: 'radial-gradient(ellipse at 50% 0%, rgba(148,144,170,0.04) 0%, transparent 60%)' }} />
+
       {/* Header */}
-      <div className="text-center mb-6">
-        <div className="inline-flex items-center justify-center w-12 h-12 rounded-full border border-[#c9a254]/30 bg-[#110d0a] mb-3">
-          <span className="text-[#c9a254] text-lg">✦</span>
+      <div className="text-center mb-6 relative">
+        <div className="inline-flex items-center justify-center w-12 h-12 rounded-full mb-3"
+          style={{ border: '1px solid rgba(212,169,86,0.3)', background: '#110e1c' }}>
+          <span style={{ color: '#d4a956', fontSize: '18px' }}>✦</span>
         </div>
-        <p className="font-cinzel text-[8px] text-[#5a4838] uppercase tracking-[0.3em] mb-1">
+        <p className="font-cinzel text-[8px] uppercase tracking-[0.3em] mb-1" style={{ color: '#4d4568' }}>
           Registro de Evidencia · Hora {evidenceTimer.slotIndex}
         </p>
-        <p className="text-[#9a8470] text-sm mb-3">{blockLabel}</p>
+        <p className="text-sm mb-3" style={{ color: '#9490aa' }}>{blockLabel}</p>
         {!expired && (
           <Timer deadline={evidenceTimer.deadline} onExpire={handleExpire} />
         )}
-        <p className="font-cinzel text-[#3a2e22] text-[8px] mt-1 uppercase tracking-widest">
+        <p className="font-cinzel text-[8px] mt-1 uppercase tracking-widest" style={{ color: '#2c2740' }}>
           para registrar
         </p>
       </div>
@@ -141,14 +174,16 @@ export default function EvidenceMode() {
           { val: q3, set: setQ3, label: '¿Cuál es el próximo paso?' },
         ].map(({ val, set, label }, i) => (
           <div key={i}>
-            <label className="font-cinzel text-[9px] text-[#5a4838] block mb-1.5 tracking-[0.15em] uppercase">
+            <label className="font-cinzel text-[9px] block mb-1.5 tracking-[0.15em] uppercase" style={{ color: '#4d4568' }}>
               {label}
             </label>
             <textarea
               value={val}
               onChange={(e) => set(e.target.value)}
               rows={2}
-              className="w-full bg-[#110d0a] rounded px-3 py-2 text-sm text-[#f0e6d0] placeholder-[#3a2e22] border border-[#3a2e22] focus:outline-none focus:border-[#c9a254] resize-none transition-colors"
+              style={inputStyle}
+              onFocus={e => { e.target.style.borderColor = '#d4a956'; }}
+              onBlur={e => { e.target.style.borderColor = '#2c2740'; }}
             />
           </div>
         ))}
@@ -156,10 +191,10 @@ export default function EvidenceMode() {
         {/* Focus */}
         <div>
           <div className="flex justify-between items-center mb-2">
-            <label className="font-cinzel text-[9px] text-[#5a4838] uppercase tracking-[0.15em]">
+            <label className="font-cinzel text-[9px] uppercase tracking-[0.15em]" style={{ color: '#4d4568' }}>
               Nivel de Concentración
             </label>
-            <span className="font-mono text-[#c9a254] font-bold">{focus}/10</span>
+            <span className="font-mono font-bold" style={{ color: '#d4a956' }}>{focus}/10</span>
           </div>
           <input
             type="range" min={1} max={10} value={focus}
@@ -171,21 +206,29 @@ export default function EvidenceMode() {
         <button
           onClick={handleSubmit}
           disabled={!canSubmit || saving}
-          className="w-full font-cinzel font-bold bg-[#f0e6d0] text-[#0a0806] py-4 rounded text-sm tracking-[0.12em] uppercase disabled:opacity-30 active:scale-95 transition-transform"
+          className="w-full btn-primary disabled:opacity-30"
         >
           {saving ? 'Guardando...' : 'Registrar Evidencia →'}
         </button>
 
         <button
           onClick={() => setShowNoHice(true)}
-          className="w-full bg-[#110d0a] text-[#8b1a2a] font-cinzel text-[10px] tracking-[0.15em] uppercase py-3 rounded border border-[#8b1a2a]/30 active:scale-95 transition-transform hover:bg-[#8b1a2a]/10"
+          className="w-full font-cinzel text-[10px] tracking-[0.15em] uppercase py-3 rounded active:scale-95 transition-transform"
+          style={{
+            background: 'rgba(155,31,48,0.06)',
+            color: '#9b1f30',
+            border: '1px solid rgba(155,31,48,0.3)',
+          }}
         >
           No Hice Nada
         </button>
 
         <button
           onClick={handleSkip}
-          className="font-cinzel text-[#3a2e22] text-[8px] uppercase tracking-widest hover:text-[#5a4838] text-center transition-colors"
+          className="font-cinzel text-[8px] uppercase tracking-widest text-center transition-colors"
+          style={{ color: '#2c2740' }}
+          onMouseOver={e => { e.currentTarget.style.color = '#4d4568'; }}
+          onMouseOut={e => { e.currentTarget.style.color = '#2c2740'; }}
         >
           Ya registré desde otro dispositivo — volver al tablero
         </button>

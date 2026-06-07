@@ -11,11 +11,23 @@ const QUICK_ACTIONS = [
 function Msg({ role, text }) {
   return (
     <div className={`flex ${role === 'user' ? 'justify-end' : 'justify-start'} mb-3`}>
-      <div className={`max-w-[88%] px-3 py-2.5 rounded text-sm leading-relaxed ${
-        role === 'user'
-          ? 'bg-[#f0e6d0] text-[#0a0806] rounded-br-sm font-cinzel text-xs tracking-[0.03em]'
-          : 'bg-[#1a1410] text-[#f0e6d0] border border-[#3a2e22] rounded-bl-sm'
-      }`}>
+      <div className="max-w-[88%] px-3 py-2.5 rounded text-sm leading-relaxed"
+        style={role === 'user'
+          ? {
+              background: 'linear-gradient(135deg, #d4a956, #c49040)',
+              color: '#09080e',
+              borderRadius: '8px 8px 2px 8px',
+              fontFamily: "'Cinzel', serif",
+              fontSize: '11px',
+              letterSpacing: '0.02em',
+            }
+          : {
+              background: 'linear-gradient(135deg, #1e1b2e 0%, #17142a 100%)',
+              color: '#f0e6d0',
+              border: '1px solid #2c2740',
+              borderRadius: '8px 8px 8px 2px',
+            }
+        }>
         {text.split('\n').map((line, i) => (
           <span key={i}>{line}{i < text.split('\n').length - 1 && <br />}</span>
         ))}
@@ -27,10 +39,11 @@ function Msg({ role, text }) {
 function TypingIndicator() {
   return (
     <div className="flex justify-start mb-3">
-      <div className="bg-[#1a1410] border border-[#3a2e22] px-4 py-3 rounded rounded-bl-sm flex gap-1.5 items-center">
+      <div className="px-4 py-3 rounded flex gap-1.5 items-center"
+        style={{ background: '#1e1b2e', border: '1px solid #2c2740', borderRadius: '8px 8px 8px 2px' }}>
         {[0,1,2].map(i => (
-          <div key={i} className="w-1.5 h-1.5 bg-[#c9a254] rounded-full animate-bounce"
-            style={{ animationDelay: `${i * 0.15}s` }} />
+          <div key={i} className="w-1.5 h-1.5 rounded-full animate-bounce"
+            style={{ background: '#d4a956', animationDelay: `${i * 0.15}s` }} />
         ))}
       </div>
     </div>
@@ -107,7 +120,13 @@ export default function AiChat({ initialMessage = null, forceOpen = false, onOpe
       <button
         id="ai-chat-trigger"
         onClick={() => { setOpen(v => !v); onOpenChange?.(!open); }}
-        className="fixed bottom-24 right-4 md:bottom-6 md:right-6 z-50 w-[52px] h-[52px] bg-[#110d0a] border border-[#c9a254]/40 text-[#c9a254] rounded-full shadow-xl flex items-center justify-center text-lg font-cinzel active:scale-95 transition-transform hover:bg-[#c9a254]/10"
+        className="fixed bottom-24 right-4 md:bottom-6 md:right-6 z-50 w-[52px] h-[52px] rounded-full flex items-center justify-center text-lg font-cinzel active:scale-95 transition-transform"
+        style={{
+          background: 'linear-gradient(135deg, #1e1b2e 0%, #110e1c 100%)',
+          border: '1px solid rgba(212,169,86,0.4)',
+          color: '#d4a956',
+          boxShadow: '0 4px 20px rgba(0,0,0,0.5), 0 0 12px rgba(212,169,86,0.1)',
+        }}
         title="Consejero IA"
       >
         {open ? '✕' : '✦'}
@@ -116,14 +135,22 @@ export default function AiChat({ initialMessage = null, forceOpen = false, onOpe
       {/* Chat panel */}
       {open && (
         <div
-          className="fixed bottom-40 right-4 md:bottom-20 md:right-6 z-50 bg-[#0a0806] border border-[#3a2e22] rounded-xl shadow-2xl flex flex-col overflow-hidden"
-          style={{ width: 'min(92vw, 400px)', maxHeight: '65vh' }}
+          className="fixed bottom-40 right-4 md:bottom-20 md:right-6 z-50 flex flex-col overflow-hidden"
+          style={{
+            width: 'min(92vw, 400px)',
+            maxHeight: '65vh',
+            background: '#0c0a14',
+            border: '1px solid #2c2740',
+            borderRadius: '16px',
+            boxShadow: '0 8px 40px rgba(0,0,0,0.7)',
+          }}
         >
           {/* Header */}
-          <div className="px-4 py-3 border-b border-[#1a1410] flex items-center gap-2 shrink-0">
-            <span className="w-2 h-2 rounded-full bg-[#c9a254]" />
+          <div className="px-4 py-3 flex items-center gap-2 shrink-0"
+            style={{ borderBottom: '1px solid #1e1b2e' }}>
+            <span className="w-2 h-2 rounded-full" style={{ background: '#d4a956' }} />
             <span className="font-cinzel text-[#f0e6d0] font-bold text-sm tracking-[0.06em]">Consejero IA</span>
-            <span className="font-cinzel text-[#3a2e22] text-[8px] ml-auto uppercase tracking-widest">GPT-4o · DB conectada</span>
+            <span className="font-cinzel text-[#2c2740] text-[8px] ml-auto uppercase tracking-widest">GPT-4o · DB conectada</span>
           </div>
 
           {/* Messages */}
@@ -140,7 +167,10 @@ export default function AiChat({ initialMessage = null, forceOpen = false, onOpe
                 <button
                   key={label}
                   onClick={() => sendMessage(msg)}
-                  className="font-cinzel text-[8px] tracking-[0.08em] uppercase bg-[#110d0a] border border-[#3a2e22] text-[#5a4838] hover:text-[#c9a254] hover:border-[#c9a254]/40 px-2.5 py-1.5 rounded transition-colors"
+                  className="font-cinzel text-[8px] tracking-[0.08em] uppercase px-2.5 py-1.5 rounded transition-colors"
+                  style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid #2c2740', color: '#4d4568' }}
+                  onMouseOver={e => { e.currentTarget.style.color = '#d4a956'; e.currentTarget.style.borderColor = 'rgba(212,169,86,0.4)'; }}
+                  onMouseOut={e => { e.currentTarget.style.color = '#4d4568'; e.currentTarget.style.borderColor = '#2c2740'; }}
                 >
                   {label}
                 </button>
@@ -149,7 +179,7 @@ export default function AiChat({ initialMessage = null, forceOpen = false, onOpe
           )}
 
           {/* Input */}
-          <div className="px-3 py-3 border-t border-[#1a1410] flex gap-2 shrink-0">
+          <div className="px-3 py-3 flex gap-2 shrink-0" style={{ borderTop: '1px solid #1e1b2e' }}>
             <textarea
               ref={inputRef}
               value={input}
@@ -157,12 +187,27 @@ export default function AiChat({ initialMessage = null, forceOpen = false, onOpe
               onKeyDown={handleKey}
               placeholder="Consulta al consejero..."
               rows={1}
-              className="flex-1 bg-[#110d0a] text-[#f0e6d0] text-sm rounded px-3 py-2 outline-none border border-[#3a2e22] focus:border-[#c9a254] resize-none placeholder-[#3a2e22] transition-colors"
+              style={{
+                flex: 1,
+                background: '#110e1c',
+                color: '#f0e6d0',
+                fontSize: '14px',
+                borderRadius: '8px',
+                padding: '8px 12px',
+                border: '1px solid #2c2740',
+                outline: 'none',
+                resize: 'none',
+                fontFamily: "'Crimson Text', serif",
+                transition: 'border-color 0.2s',
+              }}
+              onFocus={e => { e.target.style.borderColor = '#d4a956'; }}
+              onBlur={e => { e.target.style.borderColor = '#2c2740'; }}
             />
             <button
               onClick={() => sendMessage(input)}
               disabled={!input.trim() || loading}
-              className="font-cinzel font-bold bg-[#c9a254] text-[#0a0806] px-3 py-2 rounded text-sm active:scale-95 disabled:opacity-30 transition-transform"
+              className="font-cinzel font-bold px-3 py-2 rounded text-sm active:scale-95 disabled:opacity-30 transition-transform"
+              style={{ background: '#d4a956', color: '#09080e' }}
             >
               →
             </button>

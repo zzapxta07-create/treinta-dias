@@ -3,12 +3,12 @@ export default function ScoreRing({ score = 0, max = 100, size = 120 }) {
   const circ  = 2 * Math.PI * r;
   const pct   = Math.min(1, Math.max(0, score / max));
   const dash  = pct * circ;
-  const color = score >= 70 ? '#c9a254' : score >= 40 ? '#9a8470' : '#8b1a2a';
+  const color = score >= 70 ? '#d4a956' : score >= 40 ? '#9490aa' : '#9b1f30';
 
   return (
     <div className="relative flex items-center justify-center" style={{ width: size, height: size }}>
       <svg width={size} height={size} style={{ transform: 'rotate(-90deg)' }}>
-        <circle cx={size/2} cy={size/2} r={r} fill="none" stroke="#3a2e22" strokeWidth="7" />
+        <circle cx={size/2} cy={size/2} r={r} fill="none" stroke="#2c2740" strokeWidth="7" />
         <circle
           cx={size/2} cy={size/2} r={r}
           fill="none"
@@ -23,7 +23,7 @@ export default function ScoreRing({ score = 0, max = 100, size = 120 }) {
         <span className="font-mono font-black text-[#f0e6d0]" style={{ fontSize: size * 0.24, color }}>
           {score}
         </span>
-        <span className="font-cinzel text-[#5a4838]" style={{ fontSize: size * 0.08 }}>/ {max}</span>
+        <span className="font-cinzel text-[#4d4568]" style={{ fontSize: size * 0.08 }}>/ {max}</span>
       </div>
     </div>
   );

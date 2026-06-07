@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useStore } from '../../store/useStore';
 import api from '../../api/index.js';
+import { GreatHelm, DiamondOrnament } from '../ui/Ornaments';
 
 export default function DayLost() {
   const currentDay    = useStore((s) => s.currentDay);
@@ -19,44 +20,101 @@ export default function DayLost() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-[#0a0806] px-6 text-center">
-      <div className="fixed inset-0 pointer-events-none"
-        style={{ background: 'radial-gradient(ellipse at center, transparent 20%, rgba(0,0,0,0.8) 100%)' }} />
+    <div className="min-h-screen flex flex-col items-center justify-center px-6 text-center relative overflow-hidden"
+      style={{ background: 'linear-gradient(160deg, #100a0c 0%, #0c0a14 40%, #090608 100%)' }}>
 
-      <div className="relative">
+      {/* Crimson atmospheric glow */}
+      <div className="fixed inset-0 pointer-events-none" style={{
+        background: 'radial-gradient(ellipse 70% 60% at 50% 0%, rgba(155,31,48,0.08) 0%, transparent 70%)',
+      }} />
+      <div className="fixed inset-0 pointer-events-none" style={{
+        background: 'radial-gradient(ellipse at center, transparent 30%, rgba(0,0,0,0.8) 100%)',
+      }} />
+
+      {/* Large faint inverted/broken helm */}
+      <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none select-none rotate-180"
+        style={{ opacity: 0.03 }}>
+        <GreatHelm size={500} color="#9b1f30" strokeWidth={0.8} />
+      </div>
+
+      {/* Corner lines — red tinted */}
+      <div className="fixed top-8 left-8 w-12 h-12 pointer-events-none" style={{
+        borderLeft: '1px solid rgba(155,31,48,0.2)',
+        borderTop: '1px solid rgba(155,31,48,0.2)',
+      }} />
+      <div className="fixed top-8 right-8 w-12 h-12 pointer-events-none" style={{
+        borderRight: '1px solid rgba(155,31,48,0.2)',
+        borderTop: '1px solid rgba(155,31,48,0.2)',
+      }} />
+
+      <div className="relative max-w-sm w-full">
+
         {/* Broken crest */}
-        <div className="inline-flex items-center justify-center w-20 h-20 rounded-full border border-[#8b1a2a]/40 bg-[#8b1a2a]/08 mb-6"
-          style={{ backgroundColor: 'rgba(139,26,42,0.08)' }}>
-          <span className="text-[#8b1a2a] text-3xl">✕</span>
+        <div className="inline-flex items-center justify-center w-24 h-24 rounded-full mb-6 relative"
+          style={{
+            border: '1px solid rgba(155,31,48,0.25)',
+            background: 'rgba(155,31,48,0.06)',
+            boxShadow: '0 0 40px rgba(155,31,48,0.12), inset 0 1px 0 rgba(155,31,48,0.05)',
+          }}>
+          <div style={{ filter: 'drop-shadow(0 0 8px rgba(155,31,48,0.4))' }}>
+            <GreatHelm size={54} color="#9b1f30" strokeWidth={1.5} opacity={0.9} />
+          </div>
+          {/* Diagonal crack lines */}
+          <div className="absolute inset-0 rounded-full overflow-hidden pointer-events-none" style={{ opacity: 0.4 }}>
+            <div style={{
+              position: 'absolute', top: '20%', left: '30%',
+              width: '1px', height: '50%',
+              background: '#9b1f30',
+              transform: 'rotate(25deg)',
+            }} />
+            <div style={{
+              position: 'absolute', top: '15%', right: '25%',
+              width: '1px', height: '40%',
+              background: '#9b1f30',
+              transform: 'rotate(-15deg)',
+            }} />
+          </div>
         </div>
 
-        <p className="font-cinzel text-[9px] text-[#5a4838] tracking-[0.5em] uppercase mb-3">
+        <p className="font-cinzel text-[#4d4568] text-[8px] tracking-[0.5em] uppercase mb-3">
           {currentDay?.date_key?.toString().slice(0, 10)}
         </p>
 
-        <h1 className="font-cinzel text-4xl font-bold text-[#8b1a2a] tracking-[0.1em] leading-tight mb-2">
+        <h1 className="font-cinzel text-5xl font-black tracking-[0.08em] leading-none mb-2"
+          style={{
+            color: '#9b1f30',
+            textShadow: '0 0 40px rgba(155,31,48,0.3), 0 0 80px rgba(155,31,48,0.1)',
+          }}>
           DIES<br />AMISSUS
         </h1>
 
-        <div className="flex items-center gap-3 my-4 px-8">
-          <div className="flex-1 h-px bg-[#8b1a2a]/30" />
-          <span className="text-[#8b1a2a]/50 text-xs">◆</span>
-          <div className="flex-1 h-px bg-[#8b1a2a]/30" />
+        <div className="flex items-center gap-3 my-5 px-8">
+          <div className="flex-1 h-px" style={{ background: 'linear-gradient(90deg, transparent, rgba(155,31,48,0.3))' }} />
+          <DiamondOrnament color="#4d4568" size={7} />
+          <div className="flex-1 h-px" style={{ background: 'linear-gradient(90deg, rgba(155,31,48,0.3), transparent)' }} />
         </div>
-
-        <p className="font-cinzel text-[9px] text-[#5a4838] tracking-[0.3em] uppercase mb-2">
-          Día Perdido
-        </p>
 
         {/* Penalty card */}
-        <div className="bg-[#110d0a] rounded-lg p-5 mb-8 max-w-xs w-full border border-[#8b1a2a]/30 mx-auto">
-          <p className="font-cinzel text-[9px] text-[#5a4838] tracking-[0.2em] uppercase mb-2">
+        <div className="rounded-xl p-5 mb-8 mx-auto max-w-xs w-full"
+          style={{
+            background: 'linear-gradient(135deg, #1a0c10 0%, #110e1c 100%)',
+            border: '1px solid rgba(155,31,48,0.2)',
+            boxShadow: '0 8px 32px rgba(155,31,48,0.08)',
+          }}>
+          <p className="font-cinzel text-[8px] text-[#4d4568] tracking-[0.25em] uppercase mb-2">
             Penalización Aplicada
           </p>
-          <p className="font-mono text-[#8b1a2a] text-4xl font-black">−150 pts</p>
+          <p className="font-mono text-5xl font-black"
+            style={{
+              color: '#9b1f30',
+              textShadow: '0 0 20px rgba(155,31,48,0.3)',
+            }}>
+            −150
+          </p>
+          <p className="font-cinzel text-[#4d4568] text-[8px] tracking-widest uppercase">puntos</p>
         </div>
 
-        <p className="text-[#9a8470] text-sm max-w-sm leading-relaxed mb-8">
+        <p className="text-[#9490aa] text-sm max-w-sm leading-relaxed mb-8">
           El ritual del alba no fue completado a tiempo. El caballero no puede registrar nada hoy.
           Mañana a las 7am la fortaleza abrirá sus puertas de nuevo.
         </p>
@@ -64,7 +122,7 @@ export default function DayLost() {
         <button
           onClick={handleRecover}
           disabled={recovering}
-          className="font-cinzel text-[9px] text-[#5a4838] tracking-widest uppercase hover:text-[#9a8470] transition-colors disabled:opacity-50"
+          className="font-cinzel text-[8px] text-[#4d4568] tracking-widest uppercase hover:text-[#9490aa] transition-colors disabled:opacity-50"
         >
           {recovering ? 'Recuperando...' : 'Recuperar día (error de temporizador)'}
         </button>

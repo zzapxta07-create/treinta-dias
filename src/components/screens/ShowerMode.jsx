@@ -3,14 +3,28 @@ import { useStore } from "../../store/useStore";
 import Timer from "../ui/Timer";
 import PhotoUpload from "../ui/PhotoUpload";
 
-export default function ShowerMode() {
-  const showerTimer = useStore((s) => s.currentDay.showerTimer);
-  const completeShower = useStore((s) => s.completeShower);
-  const showerFailed = useStore((s) => s.showerFailed);
+const inputStyle = {
+  width: '100%',
+  background: '#09080e',
+  color: '#f0e6d0',
+  border: '1px solid #2c2740',
+  borderRadius: '8px',
+  padding: '12px 16px',
+  outline: 'none',
+  resize: 'none',
+  fontFamily: "'Crimson Text', serif",
+  fontSize: '14px',
+  transition: 'border-color 0.2s',
+};
 
-  const [photo, setPhoto] = useState(null);
-  const [phrase, setPhrase] = useState("");
-  const [expired, setExpired] = useState(false);
+export default function ShowerMode() {
+  const showerTimer    = useStore((s) => s.currentDay.showerTimer);
+  const completeShower = useStore((s) => s.completeShower);
+  const showerFailed   = useStore((s) => s.showerFailed);
+
+  const [photo,     setPhoto]     = useState(null);
+  const [phrase,    setPhrase]    = useState("");
+  const [expired,   setExpired]   = useState(false);
   const [submitted, setSubmitted] = useState(false);
 
   function handleExpire() {
@@ -29,33 +43,47 @@ export default function ShowerMode() {
 
   if (expired) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-[#0a0806] text-center px-6">
+      <div className="min-h-screen flex flex-col items-center justify-center text-center px-6"
+        style={{ background: '#09080e' }}>
         <div className="fixed inset-0 pointer-events-none"
           style={{ background: 'radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,0.7) 100%)' }} />
         <div className="relative">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full border border-[#8b1a2a]/40 bg-[#110d0a] mb-5">
-            <span className="text-[#8b1a2a] text-2xl">☽</span>
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full mb-5"
+            style={{ border: '1px solid rgba(155,31,48,0.4)', background: '#110e1c' }}>
+            <span style={{ color: '#9b1f30', fontSize: '24px' }}>☽</span>
           </div>
-          <p className="font-cinzel text-[#8b1a2a] text-2xl font-bold tracking-[0.08em]">Tiempo Agotado</p>
-          <p className="text-[#9a8470] mt-3 text-sm">El día quedó perdido. Mañana a las 7am de nuevo.</p>
+          <p className="font-cinzel text-2xl font-bold tracking-[0.08em]" style={{ color: '#9b1f30' }}>
+            Tiempo Agotado
+          </p>
+          <p className="mt-3 text-sm" style={{ color: '#9490aa' }}>
+            El día quedó perdido. Mañana a las 7am de nuevo.
+          </p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-[#0a0806] px-6 py-10">
+    <div className="min-h-screen flex flex-col items-center justify-center px-6 py-10"
+      style={{ background: '#09080e' }}>
       <div className="fixed inset-0 pointer-events-none"
-        style={{ background: 'radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,0.6) 100%)' }} />
+        style={{ background: 'radial-gradient(ellipse at 50% 0%, rgba(212,169,86,0.04) 0%, transparent 50%)' }} />
+
       <div className="relative w-full max-w-sm">
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-14 h-14 rounded-full border border-[#3a2e22] bg-[#110d0a] mb-4">
-            <span className="text-[#c9a254] text-2xl">☀</span>
+          <div className="inline-flex items-center justify-center w-14 h-14 rounded-full mb-4"
+            style={{ border: '1px solid rgba(212,169,86,0.3)', background: '#110e1c' }}>
+            <span style={{ color: '#d4a956', fontSize: '24px' }}>☀</span>
           </div>
-          <p className="font-cinzel text-[#5a4838] text-[9px] tracking-[0.4em] uppercase mb-1">Purificación</p>
-          <h1 className="font-cinzel text-2xl font-bold text-[#f0e6d0] tracking-[0.06em]">Ritual del Agua</h1>
+          <p className="font-cinzel text-[9px] tracking-[0.4em] uppercase mb-1" style={{ color: '#4d4568' }}>
+            Purificación
+          </p>
+          <h1 className="font-cinzel text-2xl font-bold tracking-[0.06em]" style={{ color: '#f0e6d0' }}>
+            Ritual del Agua
+          </h1>
         </div>
-        <p className="text-[#9a8470] text-sm text-center mb-6">
+
+        <p className="text-sm text-center mb-6" style={{ color: '#9490aa' }}>
           Ve a ducharte. Tienes 20 minutos para volver con tu foto.
         </p>
 
@@ -67,7 +95,7 @@ export default function ShowerMode() {
 
         <div className="flex flex-col gap-5">
           <div>
-            <p className="font-cinzel text-[9px] text-[#5a4838] tracking-[0.2em] uppercase mb-3 text-center">
+            <p className="font-cinzel text-[9px] tracking-[0.2em] uppercase mb-3 text-center" style={{ color: '#4d4568' }}>
               Prueba del Ritual
             </p>
             <div className="flex justify-center">
@@ -76,7 +104,7 @@ export default function ShowerMode() {
           </div>
 
           <div>
-            <label className="font-cinzel text-[9px] text-[#5a4838] block mb-2 tracking-[0.2em] uppercase">
+            <label className="font-cinzel text-[9px] block mb-2 tracking-[0.2em] uppercase" style={{ color: '#4d4568' }}>
               Frase de Batalla
             </label>
             <textarea
@@ -84,14 +112,16 @@ export default function ShowerMode() {
               onChange={(e) => setPhrase(e.target.value)}
               rows={3}
               placeholder="Escribí tu frase para hoy..."
-              className="w-full bg-[#110d0a] rounded px-4 py-3 text-sm text-[#f0e6d0] placeholder-[#3a2e22] border border-[#3a2e22] focus:outline-none focus:border-[#c9a254] resize-none transition-colors"
+              style={inputStyle}
+              onFocus={e => { e.target.style.borderColor = '#d4a956'; }}
+              onBlur={e => { e.target.style.borderColor = '#2c2740'; }}
             />
           </div>
 
           <button
             onClick={handleSubmit}
             disabled={!canSubmit}
-            className="w-full font-cinzel font-bold bg-[#f0e6d0] text-[#0a0806] py-4 rounded text-sm tracking-[0.12em] uppercase active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed transition-transform"
+            className="w-full btn-primary disabled:opacity-30"
           >
             ¡A las Armas!
           </button>

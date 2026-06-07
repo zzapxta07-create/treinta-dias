@@ -5,6 +5,7 @@ import {
 } from 'recharts';
 import { AREAS } from '../../data/areas';
 import api from '../../api/index.js';
+import { DiamondOrnament } from '../ui/Ornaments';
 
 const RANGE_OPTIONS = [
   { label: '7 días',  value: 7 },
@@ -12,10 +13,17 @@ const RANGE_OPTIONS = [
   { label: 'Todo',    value: 0 },
 ];
 
+const panelStyle = {
+  background: 'linear-gradient(135deg, #17142a 0%, #110e1c 100%)',
+  border: '1px solid #2c2740',
+  borderRadius: '12px',
+  boxShadow: '0 4px 24px rgba(0,0,0,0.4)',
+};
+
 function scoreColor(s) {
-  if (s >= 70) return '#c9a254';
-  if (s >= 40) return '#9a8470';
-  return '#8b1a2a';
+  if (s >= 70) return '#d4a956';
+  if (s >= 40) return '#9490aa';
+  return '#9b1f30';
 }
 
 const AREA_COLORS = {
@@ -28,8 +36,8 @@ const AREA_COLORS = {
 function CustomTooltip({ active, payload, label }) {
   if (!active || !payload?.length) return null;
   return (
-    <div className="bg-[#110d0a] border border-[#3a2e22] rounded px-3 py-2 text-xs">
-      <p className="font-cinzel text-[#5a4838] mb-1 tracking-widest">{label}</p>
+    <div style={{ background: '#1e1b2e', border: '1px solid #2c2740', borderRadius: 8, padding: '8px 12px', fontSize: 12 }}>
+      <p className="font-cinzel text-[#4d4568] mb-1 tracking-widest">{label}</p>
       {payload.map((p, i) => (
         <p key={i} style={{ color: p.color || p.fill }}>{p.name}: {p.value}</p>
       ))}
@@ -39,10 +47,10 @@ function CustomTooltip({ active, payload, label }) {
 
 function BlockDetail({ block, evidence }) {
   const [imgOpen, setImgOpen] = useState(false);
-  const areaColor = {
+  const areaColorClass = {
     NEGOCIO: 'border-blue-500', SEGUNDA: 'border-purple-500',
-    ESTUDIO: 'border-yellow-500', EJERCICIO: 'border-green-500', OTROS: 'border-[#3a2e22]',
-  }[block.area_id] || 'border-[#3a2e22]';
+    ESTUDIO: 'border-yellow-500', EJERCICIO: 'border-green-500', OTROS: 'border-[#2c2740]',
+  }[block.area_id] || 'border-[#2c2740]';
 
   const dur = block.end_minutes - block.start_minutes;
   const durLabel = dur >= 60
@@ -51,36 +59,39 @@ function BlockDetail({ block, evidence }) {
   const t = (m) => `${Math.floor(m/60)}:${String(m%60).padStart(2,'0')}`;
 
   return (
-    <div className={`bg-[#0a0806] rounded border-l-4 ${areaColor} border border-[#3a2e22] p-3 mb-2`}>
+    <div className={`rounded border-l-4 ${areaColorClass} p-3 mb-2`}
+      style={{ background: '#09080e', border: '1px solid #2c2740', borderLeftWidth: 4 }}>
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
           <p className="text-[#f0e6d0] text-sm truncate">
             {block.project_name || AREAS[block.area_id]?.label || block.area_id}
           </p>
-          <p className="font-mono text-[#5a4838] text-xs">{t(block.start_minutes)}–{t(block.end_minutes)} · {durLabel}</p>
+          <p className="font-mono text-[#4d4568] text-xs">{t(block.start_minutes)}–{t(block.end_minutes)} · {durLabel}</p>
         </div>
-        <span className={`font-cinzel text-[8px] tracking-[0.08em] uppercase shrink-0 px-2 py-0.5 rounded ${
-          !evidence              ? 'bg-[#1a1410] text-[#5a4838] border border-[#3a2e22]' :
-          evidence.no_hice      ? 'bg-[#8b1a2a]/15 text-[#8b1a2a] border border-[#8b1a2a]/30' :
-                                  'bg-[#c9a254]/15 text-[#c9a254] border border-[#c9a254]/30'
-        }`}>
+        <span className="font-cinzel text-[8px] tracking-[0.08em] uppercase shrink-0 px-2 py-0.5 rounded" style={
+          !evidence
+            ? { background: 'rgba(255,255,255,0.04)', color: '#4d4568', border: '1px solid #2c2740' }
+            : evidence.no_hice
+            ? { background: 'rgba(155,31,48,0.12)', color: '#9b1f30', border: '1px solid rgba(155,31,48,0.3)' }
+            : { background: 'rgba(212,169,86,0.12)', color: '#d4a956', border: '1px solid rgba(212,169,86,0.3)' }
+        }>
           {!evidence ? 'Sin evidencia' : evidence.no_hice ? 'No hice' : '✓ Hecho'}
         </span>
       </div>
 
       {evidence && !evidence.no_hice && (
-        <div className="mt-2 pt-2 border-t border-[#1a1410]">
+        <div className="mt-2 pt-2" style={{ borderTop: '1px solid #1e1b2e' }}>
           {evidence.q1 && (
-            <p className="text-[#9a8470] text-xs leading-relaxed mb-2 italic">"{evidence.q1}"</p>
+            <p className="text-[#9490aa] text-xs leading-relaxed mb-2 italic">"{evidence.q1}"</p>
           )}
           <div className="flex items-center gap-3">
             {evidence.focus_level && (
-              <span className="text-[#5a4838] text-xs">
-                Foco: <span className="font-mono text-[#c9a254] font-bold">{evidence.focus_level}/10</span>
+              <span className="text-[#4d4568] text-xs">
+                Foco: <span className="font-mono text-[#d4a956] font-bold">{evidence.focus_level}/10</span>
               </span>
             )}
             {evidence.photo_data && (
-              <button onClick={() => setImgOpen(true)} className="font-cinzel text-[9px] text-[#c9a254]/70 hover:text-[#c9a254] transition-colors uppercase tracking-widest">
+              <button onClick={() => setImgOpen(true)} className="font-cinzel text-[9px] text-[#d4a956]/70 hover:text-[#d4a956] transition-colors uppercase tracking-widest">
                 Ver foto
               </button>
             )}
@@ -89,7 +100,7 @@ function BlockDetail({ block, evidence }) {
       )}
 
       {evidence?.no_hice && evidence.reason && (
-        <p className="text-[#9a8470] text-xs mt-1 italic">"{evidence.reason}"</p>
+        <p className="text-[#9490aa] text-xs mt-1 italic">"{evidence.reason}"</p>
       )}
 
       {imgOpen && evidence?.photo_data && (
@@ -114,51 +125,59 @@ function DayDetail({ dateKey, onClose }) {
        .finally(() => setLoading(false));
   }, [dateKey]);
 
-  const statusColor = day?.status === 'complete'
-    ? 'bg-[#c9a254]/15 text-[#c9a254] border border-[#c9a254]/30'
+  const statusStyle = day?.status === 'complete'
+    ? { background: 'rgba(212,169,86,0.12)', color: '#d4a956', border: '1px solid rgba(212,169,86,0.3)' }
     : day?.status === 'lost'
-    ? 'bg-[#8b1a2a]/15 text-[#8b1a2a] border border-[#8b1a2a]/30'
-    : 'bg-[#1a1410] text-[#5a4838] border border-[#3a2e22]';
+    ? { background: 'rgba(155,31,48,0.12)', color: '#9b1f30', border: '1px solid rgba(155,31,48,0.3)' }
+    : { background: 'rgba(255,255,255,0.04)', color: '#4d4568', border: '1px solid #2c2740' };
   const statusLabel = day?.status === 'complete' ? 'Completo'
     : day?.status === 'lost' ? 'Perdido' : 'Parcial';
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/80 flex items-end md:items-center justify-center p-0 md:p-4"
+    <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center p-0 md:p-4"
+      style={{ background: 'rgba(0,0,0,0.85)' }}
       onClick={onClose}>
-      <div className="bg-[#0a0806] border border-[#3a2e22] rounded-t-xl md:rounded-xl w-full md:max-w-lg max-h-[85vh] flex flex-col overflow-hidden"
+      <div className="w-full md:max-w-lg max-h-[85vh] flex flex-col overflow-hidden"
+        style={{
+          background: '#0c0a14',
+          border: '1px solid #2c2740',
+          borderRadius: '16px 16px 0 0',
+        }}
         onClick={e => e.stopPropagation()}>
 
-        <div className="flex items-center justify-between px-4 py-3 border-b border-[#1a1410] shrink-0">
+        <div className="flex items-center justify-between px-4 py-3 shrink-0"
+          style={{ borderBottom: '1px solid #1e1b2e' }}>
           <div>
             <p className="font-cinzel text-[#f0e6d0] font-bold tracking-[0.05em]">{dateKey}</p>
             {day && (
               <div className="flex items-center gap-2 mt-0.5">
-                <span className="font-mono text-[#c9a254] font-bold text-sm">{day.score ?? '—'} pts</span>
-                <span className={`font-cinzel text-[8px] tracking-[0.08em] uppercase px-2 py-0.5 rounded ${statusColor}`}>{statusLabel}</span>
+                <span className="font-mono text-[#d4a956] font-bold text-sm">{day.score ?? '—'} pts</span>
+                <span className="font-cinzel text-[8px] tracking-[0.08em] uppercase px-2 py-0.5 rounded"
+                  style={statusStyle}>{statusLabel}</span>
                 {day.emotional_state && (
-                  <span className="text-[#5a4838] text-xs">Espíritu: {day.emotional_state}/10</span>
+                  <span className="text-[#4d4568] text-xs">Espíritu: {day.emotional_state}/10</span>
                 )}
               </div>
             )}
           </div>
-          <button onClick={onClose} className="text-[#5a4838] hover:text-[#f0e6d0] text-xl leading-none transition-colors">✕</button>
+          <button onClick={onClose} className="text-[#4d4568] hover:text-[#f0e6d0] text-xl leading-none transition-colors">✕</button>
         </div>
 
         <div className="flex-1 overflow-y-auto px-4 py-3">
-          {loading && <p className="font-cinzel text-[#5a4838] text-xs text-center py-8 tracking-widest">Cargando crónica...</p>}
-          {!loading && !day && <p className="text-[#5a4838] text-sm text-center py-8">Sin datos.</p>}
+          {loading && <p className="font-cinzel text-[#4d4568] text-xs text-center py-8 tracking-widest">Cargando crónica...</p>}
+          {!loading && !day && <p className="text-[#4d4568] text-sm text-center py-8">Sin datos.</p>}
           {!loading && day && (
             <>
               {day.daily_phrase && (
-                <p className="italic text-[#9a8470] text-xs text-center mb-4">"{day.daily_phrase}"</p>
+                <p className="italic text-[#9490aa] text-xs text-center mb-4">"{day.daily_phrase}"</p>
               )}
 
-              <p className="font-cinzel text-[8px] text-[#5a4838] uppercase tracking-[0.25em] mb-3">
+              <p className="font-cinzel text-[8px] text-[#4d4568] uppercase tracking-[0.25em] mb-3">
                 Bloques ({(day.blocks || []).length})
               </p>
 
               {(day.blocks || []).length === 0 && (
-                <p className="text-[#5a4838] text-xs text-center py-4">Sin bloques.</p>
+                <p className="text-[#4d4568] text-xs text-center py-4">Sin bloques.</p>
               )}
 
               {[...(day.blocks || [])]
@@ -169,11 +188,11 @@ function DayDetail({ dateKey, onClose }) {
                 })}
 
               {day.close_summary && (
-                <div className="mt-4 bg-[#110d0a] rounded-lg p-3 border border-[#3a2e22]">
-                  <p className="font-cinzel text-[9px] text-[#5a4838] uppercase tracking-[0.2em] mb-2">
+                <div className="mt-4 rounded-lg p-3" style={panelStyle}>
+                  <p className="font-cinzel text-[9px] text-[#4d4568] uppercase tracking-[0.2em] mb-2">
                     Crónica del Día
                   </p>
-                  <p className="text-[#9a8470] text-sm leading-relaxed whitespace-pre-wrap">
+                  <p className="text-[#9490aa] text-sm leading-relaxed whitespace-pre-wrap">
                     {day.close_summary}
                   </p>
                 </div>
@@ -218,7 +237,7 @@ export default function History() {
       {/* Header */}
       <div className="flex items-center justify-between mb-5">
         <div>
-          <p className="font-cinzel text-[9px] text-[#5a4838] tracking-[0.3em] uppercase mb-1">
+          <p className="font-cinzel text-[9px] text-[#4d4568] tracking-[0.3em] uppercase mb-1">
             Archivo Permanente
           </p>
           <h1 className="font-cinzel text-2xl font-bold text-[#f0e6d0] tracking-[0.06em]">Crónicas</h1>
@@ -226,11 +245,11 @@ export default function History() {
         <div className="flex gap-1">
           {RANGE_OPTIONS.map((opt) => (
             <button key={opt.value} onClick={() => setRange(opt.value)}
-              className={`font-cinzel text-[9px] tracking-[0.1em] uppercase px-3 py-1.5 rounded transition-colors ${
-                range === opt.value
-                  ? 'bg-[#c9a254]/15 text-[#c9a254] border border-[#c9a254]/30'
-                  : 'bg-[#110d0a] text-[#5a4838] border border-[#3a2e22] hover:text-[#9a8470]'
-              }`}>
+              className="font-cinzel text-[9px] tracking-[0.1em] uppercase px-3 py-1.5 rounded transition-colors"
+              style={range === opt.value
+                ? { background: 'rgba(212,169,86,0.12)', color: '#d4a956', border: '1px solid rgba(212,169,86,0.3)' }
+                : { background: 'rgba(255,255,255,0.03)', color: '#4d4568', border: '1px solid #2c2740' }
+              }>
               {opt.label}
             </button>
           ))}
@@ -238,26 +257,26 @@ export default function History() {
       </div>
 
       <div className="flex items-center gap-3 mb-6">
-        <div className="flex-1 h-px bg-[#3a2e22]" />
-        <span className="text-[#5a4838] text-xs">◆</span>
-        <div className="flex-1 h-px bg-[#3a2e22]" />
+        <div className="flex-1 h-px" style={{ background: '#2c2740' }} />
+        <DiamondOrnament color="#4d4568" size={7} />
+        <div className="flex-1 h-px" style={{ background: '#2c2740' }} />
       </div>
 
       {loading ? (
-        <div className="font-cinzel text-[#5a4838] text-xs text-center py-12 tracking-widest uppercase">
+        <div className="font-cinzel text-[#4d4568] text-xs text-center py-12 tracking-widest uppercase">
           Consultando el archivo...
         </div>
       ) : days.length === 0 ? (
-        <div className="text-[#5a4838] text-sm text-center py-12">Sin datos aún.</div>
+        <div className="text-[#4d4568] text-sm text-center py-12">Sin datos aún.</div>
       ) : (
         <>
           {/* Score chart */}
-          <div className="bg-[#110d0a] rounded-lg p-4 mb-4 border border-[#3a2e22]">
-            <p className="font-cinzel text-[8px] text-[#5a4838] mb-3 uppercase tracking-[0.25em]">Score por Jornada</p>
+          <div className="p-4 mb-4" style={panelStyle}>
+            <p className="font-cinzel text-[8px] text-[#4d4568] mb-3 uppercase tracking-[0.25em]">Score por Jornada</p>
             <ResponsiveContainer width="100%" height={140}>
               <BarChart data={scoreData} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
-                <XAxis dataKey="date" tick={{ fill: '#5a4838', fontSize: 10 }} axisLine={false} tickLine={false} interval="preserveStartEnd" />
-                <YAxis domain={[0, 100]} tick={{ fill: '#5a4838', fontSize: 10 }} axisLine={false} tickLine={false} />
+                <XAxis dataKey="date" tick={{ fill: '#4d4568', fontSize: 10 }} axisLine={false} tickLine={false} interval="preserveStartEnd" />
+                <YAxis domain={[0, 100]} tick={{ fill: '#4d4568', fontSize: 10 }} axisLine={false} tickLine={false} />
                 <Tooltip content={<CustomTooltip />} />
                 <Bar dataKey="score" radius={[2, 2, 0, 0]} name="Score">
                   {scoreData.map((entry, i) => <Cell key={i} fill={scoreColor(entry.score)} />)}
@@ -267,30 +286,30 @@ export default function History() {
           </div>
 
           {emotionData.length > 1 && (
-            <div className="bg-[#110d0a] rounded-lg p-4 mb-4 border border-[#3a2e22]">
-              <p className="font-cinzel text-[8px] text-[#5a4838] mb-3 uppercase tracking-[0.25em]">Estado del Espíritu</p>
+            <div className="p-4 mb-4" style={panelStyle}>
+              <p className="font-cinzel text-[8px] text-[#4d4568] mb-3 uppercase tracking-[0.25em]">Estado del Espíritu</p>
               <ResponsiveContainer width="100%" height={100}>
                 <LineChart data={emotionData} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
-                  <XAxis dataKey="date" tick={{ fill: '#5a4838', fontSize: 10 }} axisLine={false} tickLine={false} interval="preserveStartEnd" />
-                  <YAxis domain={[1, 10]} tick={{ fill: '#5a4838', fontSize: 10 }} axisLine={false} tickLine={false} />
+                  <XAxis dataKey="date" tick={{ fill: '#4d4568', fontSize: 10 }} axisLine={false} tickLine={false} interval="preserveStartEnd" />
+                  <YAxis domain={[1, 10]} tick={{ fill: '#4d4568', fontSize: 10 }} axisLine={false} tickLine={false} />
                   <Tooltip content={<CustomTooltip />} />
-                  <Line type="monotone" dataKey="value" stroke="#9a8470" strokeWidth={2} dot={false} name="Estado" />
+                  <Line type="monotone" dataKey="value" stroke="#9490aa" strokeWidth={2} dot={false} name="Estado" />
                 </LineChart>
               </ResponsiveContainer>
             </div>
           )}
 
           {areaData.length > 1 && (
-            <div className="bg-[#110d0a] rounded-lg p-4 mb-4 border border-[#3a2e22]">
-              <p className="font-cinzel text-[8px] text-[#5a4838] mb-3 uppercase tracking-[0.25em]">Horas por Área</p>
+            <div className="p-4 mb-4" style={panelStyle}>
+              <p className="font-cinzel text-[8px] text-[#4d4568] mb-3 uppercase tracking-[0.25em]">Horas por Área</p>
               <ResponsiveContainer width="100%" height={120}>
                 <AreaChart data={areaData} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
-                  <XAxis dataKey="date" tick={{ fill: '#5a4838', fontSize: 10 }} axisLine={false} tickLine={false} interval="preserveStartEnd" />
-                  <YAxis tick={{ fill: '#5a4838', fontSize: 10 }} axisLine={false} tickLine={false} />
+                  <XAxis dataKey="date" tick={{ fill: '#4d4568', fontSize: 10 }} axisLine={false} tickLine={false} interval="preserveStartEnd" />
+                  <YAxis tick={{ fill: '#4d4568', fontSize: 10 }} axisLine={false} tickLine={false} />
                   <Tooltip content={<CustomTooltip />} />
                   {Object.entries(AREA_COLORS).map(([a, color]) => (
                     <Area key={a} type="monotone" dataKey={a} stackId="1"
-                      stroke={color} fill={color} fillOpacity={0.4} name={AREAS[a]?.label || a} />
+                      stroke={color} fill={color} fillOpacity={0.35} name={AREAS[a]?.label || a} />
                   ))}
                 </AreaChart>
               </ResponsiveContainer>
@@ -298,7 +317,7 @@ export default function History() {
                 {Object.entries(AREA_COLORS).map(([a, color]) => (
                   <div key={a} className="flex items-center gap-1.5">
                     <div className="w-2 h-2 rounded-full" style={{ backgroundColor: color }} />
-                    <span className="font-cinzel text-[8px] text-[#5a4838] uppercase tracking-widest">{AREAS[a]?.label || a}</span>
+                    <span className="font-cinzel text-[8px] text-[#4d4568] uppercase tracking-widest">{AREAS[a]?.label || a}</span>
                   </div>
                 ))}
               </div>
@@ -306,35 +325,42 @@ export default function History() {
           )}
 
           {/* Days table */}
-          <div className="bg-[#110d0a] rounded-lg border border-[#3a2e22] overflow-hidden">
-            <div className="grid grid-cols-4 px-4 py-2.5 font-cinzel text-[8px] text-[#5a4838] uppercase tracking-[0.2em] border-b border-[#3a2e22]">
+          <div className="overflow-hidden" style={panelStyle}>
+            <div className="grid grid-cols-4 px-4 py-2.5 font-cinzel text-[8px] text-[#4d4568] uppercase tracking-[0.2em]"
+              style={{ borderBottom: '1px solid #1e1b2e' }}>
               <span>Fecha</span>
               <span className="text-center">Score</span>
               <span className="text-center">Estado</span>
               <span className="text-right">Espíritu</span>
             </div>
-            <div className="divide-y divide-[#1a1410]">
+            <div className="divide-y" style={{ borderColor: '#1e1b2e' }}>
               {days.map((d) => (
                 <button
                   key={d.date_key}
                   onClick={() => setDetailKey(d.date_key)}
-                  className="w-full grid grid-cols-4 px-4 py-2.5 text-sm items-center hover:bg-[#1a1410] transition-colors"
+                  className="w-full grid grid-cols-4 px-4 py-2.5 text-sm items-center transition-colors"
+                  style={{ background: 'transparent' }}
+                  onMouseOver={e => e.currentTarget.style.background = 'rgba(255,255,255,0.025)'}
+                  onMouseOut={e => e.currentTarget.style.background = 'transparent'}
                 >
-                  <span className="font-mono text-[#9a8470] text-xs text-left">{d.date_key.slice(5)}</span>
+                  <span className="font-mono text-[#9490aa] text-xs text-left">{d.date_key.slice(5)}</span>
                   <span className="text-center font-mono font-bold"
-                    style={{ color: d.score ? scoreColor(d.score) : '#3a2e22' }}>
+                    style={{ color: d.score ? scoreColor(d.score) : '#2c2740' }}>
                     {d.score ?? '—'}
                   </span>
                   <span className="text-center">
-                    <span className={`font-cinzel text-[8px] tracking-[0.08em] uppercase px-2 py-0.5 rounded ${
-                      d.status === 'complete' ? 'bg-[#c9a254]/15 text-[#c9a254]' :
-                      d.status === 'lost'     ? 'bg-[#8b1a2a]/15 text-[#8b1a2a]' :
-                                               'text-[#5a4838]'
-                    }`}>
+                    <span className="font-cinzel text-[8px] tracking-[0.08em] uppercase px-2 py-0.5 rounded"
+                      style={
+                        d.status === 'complete'
+                          ? { background: 'rgba(212,169,86,0.12)', color: '#d4a956' }
+                          : d.status === 'lost'
+                          ? { background: 'rgba(155,31,48,0.12)', color: '#9b1f30' }
+                          : { color: '#4d4568' }
+                      }>
                       {d.status === 'complete' ? 'OK' : d.status === 'lost' ? 'Perdido' : 'En curso'}
                     </span>
                   </span>
-                  <span className="text-right font-mono text-[#5a4838] text-xs">
+                  <span className="text-right font-mono text-[#4d4568] text-xs">
                     {d.emotional_state ?? '—'}
                   </span>
                 </button>

@@ -4,15 +4,38 @@ import { AREAS, MANDATORY_AREAS } from '../../data/areas';
 import { timeToMinutes, minutesToTime, minutesToLabel } from '../../utils/dateUtils';
 import AreaBadge from '../ui/AreaBadge';
 import api from '../../api/index.js';
+import { DiamondOrnament } from '../ui/Ornaments';
 
 const AREA_MINS = { NEGOCIO: 300, SEGUNDA: 60, ESTUDIO: 180, EJERCICIO: 30 };
+
+const panelStyle = {
+  background: 'linear-gradient(135deg, #17142a 0%, #110e1c 100%)',
+  border: '1px solid #2c2740',
+  borderRadius: '12px',
+  boxShadow: '0 4px 24px rgba(0,0,0,0.4), inset 0 1px 0 rgba(212,169,86,0.04)',
+};
+
+const inputStyle = {
+  width: '100%',
+  background: '#09080e',
+  color: '#f0e6d0',
+  fontSize: '14px',
+  borderRadius: '8px',
+  padding: '9px 12px',
+  border: '1px solid #2c2740',
+  outline: 'none',
+  transition: 'border-color 0.2s',
+  fontFamily: "'Crimson Text', serif",
+};
 
 function SectionTitle({ children }) {
   return (
     <div className="flex items-center gap-3 mb-3">
-      <div className="flex-1 h-px bg-[#3a2e22]" />
-      <p className="font-cinzel text-[8px] text-[#5a4838] uppercase tracking-[0.25em] shrink-0">{children}</p>
-      <div className="flex-1 h-px bg-[#3a2e22]" />
+      <div className="flex-1 h-px" style={{ background: '#2c2740' }} />
+      <DiamondOrnament color="#4d4568" size={6} />
+      <p className="font-cinzel text-[8px] text-[#4d4568] uppercase tracking-[0.25em] shrink-0">{children}</p>
+      <DiamondOrnament color="#4d4568" size={6} />
+      <div className="flex-1 h-px" style={{ background: '#2c2740' }} />
     </div>
   );
 }
@@ -192,7 +215,6 @@ export default function DayPlanner() {
 
   const areaProjects = projects.filter((p) => p.area_id === form.area && !p.archived);
 
-  // Timeline
   const TIMELINE_START = 6 * 60;
   const TIMELINE_END   = 24 * 60;
   const TIMELINE_RANGE = TIMELINE_END - TIMELINE_START;
@@ -206,22 +228,29 @@ export default function DayPlanner() {
 
   const AREA_HEX = {
     NEGOCIO: '#3B82F6', SEGUNDA: '#A855F7', ESTUDIO: '#F59E0B',
-    EJERCICIO: '#10B981', OTROS: '#9a8470',
+    EJERCICIO: '#10B981', OTROS: '#9490aa',
   };
+
+  const fieldStyle = (focused) => ({
+    ...inputStyle,
+    borderColor: focused ? '#d4a956' : '#2c2740',
+    boxShadow: focused ? '0 0 0 3px rgba(212,169,86,0.08)' : 'none',
+  });
 
   return (
     <div className="min-h-screen px-4 py-6 max-w-2xl mx-auto pb-28">
       {/* Header */}
-      <p className="font-cinzel text-[9px] text-[#5a4838] tracking-[0.3em] uppercase mb-1">
+      <p className="font-cinzel text-[9px] text-[#4d4568] tracking-[0.3em] uppercase mb-1">
         {currentDay?.date_key?.toString().slice(0, 10)}
       </p>
-      <h1 className="font-cinzel text-2xl font-bold text-[#f0e6d0] tracking-[0.06em] mb-1">
+      <h1 className="font-cinzel text-2xl font-bold text-[#f0e6d0] tracking-[0.06em] mb-1"
+        style={{ textShadow: '0 0 30px rgba(212,169,86,0.08)' }}>
         Planificar el Día
       </h1>
-      <p className="text-[#5a4838] text-sm mb-6">Establece los bloques de trabajo para la jornada.</p>
+      <p className="text-[#4d4568] text-sm mb-6">Establece los bloques de trabajo para la jornada.</p>
 
       {/* Minimums */}
-      <div className="bg-[#110d0a] rounded-lg p-4 mb-4 border border-[#3a2e22]">
+      <div className="p-4 mb-4" style={panelStyle}>
         <SectionTitle>{isSpecial ? 'Día Especial — mínimos libres' : 'Mínimos Obligatorios'}</SectionTitle>
         <div className="grid grid-cols-2 gap-x-6 gap-y-2">
           {MANDATORY_AREAS.map((id) => {
@@ -229,10 +258,10 @@ export default function DayPlanner() {
             const ok   = isSpecial || done >= AREA_MINS[id];
             return (
               <div key={id} className="flex justify-between items-center">
-                <span className={`text-xs ${ok ? 'text-[#c9a254]' : 'text-[#5a4838]'}`}>
+                <span className={`text-xs ${ok ? 'text-[#d4a956]' : 'text-[#4d4568]'}`}>
                   {ok ? '✓' : '◦'} {AREAS[id].label.split(' ')[0]}
                 </span>
-                <span className={`font-mono text-xs ${ok ? 'text-[#c9a254]' : 'text-[#8b1a2a]'}`}>
+                <span className={`font-mono text-xs ${ok ? 'text-[#d4a956]' : 'text-[#9b1f30]'}`}>
                   {minutesToLabel(done)}/{minutesToLabel(AREA_MINS[id])}
                 </span>
               </div>
@@ -242,14 +271,14 @@ export default function DayPlanner() {
         <div className="flex items-center justify-between mt-3">
           {canActivateSpecial && (
             <button onClick={activateSpecialDay}
-              className="font-cinzel text-[9px] tracking-widest uppercase text-[#c9a254]/70 hover:text-[#c9a254] transition-colors">
+              className="font-cinzel text-[9px] tracking-widest uppercase text-[#d4a956]/70 hover:text-[#d4a956] transition-colors">
               Activar Día Especial ({config.special_days_total - config.special_days_used_count} restantes)
             </button>
           )}
           {!canActivateSpecial && <span />}
           {config && (
             <button onClick={addSpecialDay}
-              className="font-cinzel text-[9px] tracking-widest uppercase text-[#5a4838] hover:text-[#c9a254] transition-colors">
+              className="font-cinzel text-[9px] tracking-widest uppercase text-[#4d4568] hover:text-[#d4a956] transition-colors">
               + día especial
             </button>
           )}
@@ -258,9 +287,10 @@ export default function DayPlanner() {
 
       {/* Timeline */}
       {blocks.length > 0 && (
-        <div className="bg-[#110d0a] rounded-lg p-4 mb-4 border border-[#3a2e22]">
+        <div className="p-4 mb-4" style={panelStyle}>
           <SectionTitle>Línea de Tiempo</SectionTitle>
-          <div className="relative h-7 bg-[#0a0806] rounded overflow-hidden mb-1 border border-[#3a2e22]">
+          <div className="relative h-7 rounded overflow-hidden mb-1 border border-[#2c2740]"
+            style={{ background: '#09080e' }}>
             {blocks.map((b) => {
               const s = b.start_minutes ?? b.startMinutes;
               const e = b.end_minutes   ?? b.endMinutes;
@@ -280,34 +310,36 @@ export default function DayPlanner() {
               );
             })}
           </div>
-          <div className="flex justify-between font-mono text-[9px] text-[#3a2e22]">
+          <div className="flex justify-between font-mono text-[9px] text-[#2c2740]">
             <span>VI</span><span>XII</span><span>XVIII</span><span>XXIV</span>
           </div>
         </div>
       )}
 
       {/* Add block form */}
-      <div className="bg-[#110d0a] rounded-lg p-4 mb-4 border border-[#3a2e22]">
+      <div className="p-4 mb-4" style={panelStyle}>
         <SectionTitle>Nuevo Bloque</SectionTitle>
         <div className="grid grid-cols-2 gap-3 mb-3">
           {[['Inicio', 'start'], ['Fin', 'end']].map(([label, field]) => (
             <div key={field}>
-              <label className="font-cinzel text-[8px] text-[#5a4838] block mb-1.5 tracking-[0.2em] uppercase">{label}</label>
+              <label className="font-cinzel text-[8px] text-[#4d4568] block mb-1.5 tracking-[0.2em] uppercase">{label}</label>
               <input
                 type="time"
                 value={form[field]}
                 onChange={(e) => setForm((f) => ({ ...f, [field]: e.target.value }))}
-                className="w-full bg-[#0a0806] rounded px-3 py-2 text-sm text-[#f0e6d0] border border-[#3a2e22] focus:outline-none focus:border-[#c9a254] transition-colors"
+                style={inputStyle}
+                onFocus={e => { e.target.style.borderColor = '#d4a956'; }}
+                onBlur={e => { e.target.style.borderColor = '#2c2740'; }}
               />
             </div>
           ))}
         </div>
         <div className="mb-3">
-          <label className="font-cinzel text-[8px] text-[#5a4838] block mb-1.5 tracking-[0.2em] uppercase">Área</label>
+          <label className="font-cinzel text-[8px] text-[#4d4568] block mb-1.5 tracking-[0.2em] uppercase">Área</label>
           <select
             value={form.area}
             onChange={(e) => setForm((f) => ({ ...f, area: e.target.value, projectId: '' }))}
-            className="w-full bg-[#0a0806] rounded px-3 py-2 text-sm text-[#f0e6d0] border border-[#3a2e22] focus:outline-none"
+            style={inputStyle}
           >
             {Object.values(AREAS).map((a) => (
               <option key={a.id} value={a.id}>{a.label}</option>
@@ -316,11 +348,11 @@ export default function DayPlanner() {
         </div>
         {form.area !== 'OTROS' && areaProjects.length > 0 && (
           <div className="mb-3">
-            <label className="font-cinzel text-[8px] text-[#5a4838] block mb-1.5 tracking-[0.2em] uppercase">Empresa (opcional)</label>
+            <label className="font-cinzel text-[8px] text-[#4d4568] block mb-1.5 tracking-[0.2em] uppercase">Empresa (opcional)</label>
             <select
               value={form.projectId}
               onChange={(e) => setForm((f) => ({ ...f, projectId: e.target.value }))}
-              className="w-full bg-[#0a0806] rounded px-3 py-2 text-sm text-[#f0e6d0] border border-[#3a2e22] focus:outline-none"
+              style={inputStyle}
             >
               <option value="">Sin empresa</option>
               {areaProjects.map((p) => (
@@ -330,24 +362,34 @@ export default function DayPlanner() {
           </div>
         )}
         <div className="mb-3">
-          <label className="font-cinzel text-[8px] text-[#5a4838] block mb-1.5 tracking-[0.2em] uppercase">Notas (opcional)</label>
+          <label className="font-cinzel text-[8px] text-[#4d4568] block mb-1.5 tracking-[0.2em] uppercase">Notas (opcional)</label>
           <textarea
             value={form.notes}
             onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))}
             rows={2}
             placeholder="¿Qué planeas hacer en este bloque?"
-            className="w-full bg-[#0a0806] rounded px-3 py-2 text-sm text-[#f0e6d0] border border-[#3a2e22] focus:outline-none focus:border-[#c9a254] resize-none placeholder-[#3a2e22] transition-colors"
+            style={{ ...inputStyle, resize: 'none' }}
+            onFocus={e => { e.target.style.borderColor = '#d4a956'; }}
+            onBlur={e => { e.target.style.borderColor = '#2c2740'; }}
           />
         </div>
         {error && (
-          <p className="text-[#8b1a2a] text-xs bg-[#8b1a2a]/10 border border-[#8b1a2a]/30 px-3 py-2 rounded mb-3">
+          <p className="text-sm px-3 py-2 rounded mb-3"
+            style={{ color: '#c43040', background: 'rgba(155,31,48,0.08)', border: '1px solid rgba(155,31,48,0.25)' }}>
             {error}
           </p>
         )}
         <button
           onClick={addBlock}
           disabled={saving}
-          className="w-full font-cinzel text-[10px] tracking-[0.15em] uppercase bg-[#1a1410] hover:bg-[#2a1f14] text-[#c9a254] border border-[#c9a254]/30 py-2.5 rounded transition-colors disabled:opacity-50"
+          className="w-full font-cinzel text-[10px] tracking-[0.15em] uppercase py-2.5 rounded transition-colors disabled:opacity-50"
+          style={{
+            background: 'rgba(212,169,86,0.08)',
+            color: '#d4a956',
+            border: '1px solid rgba(212,169,86,0.3)',
+          }}
+          onMouseOver={e => e.currentTarget.style.background = 'rgba(212,169,86,0.15)'}
+          onMouseOut={e => e.currentTarget.style.background = 'rgba(212,169,86,0.08)'}
         >
           {saving ? 'Guardando...' : '+ Agregar Bloque'}
         </button>
@@ -355,7 +397,7 @@ export default function DayPlanner() {
 
       {/* Blocks list */}
       {blocks.length > 0 && (
-        <div className="bg-[#110d0a] rounded-lg p-4 mb-4 border border-[#3a2e22]">
+        <div className="p-4 mb-4" style={panelStyle}>
           <SectionTitle>Bloques del Día ({blocks.length})</SectionTitle>
           <div className="flex flex-col gap-2">
             {blocks.map((b) => {
@@ -368,26 +410,33 @@ export default function DayPlanner() {
 
               if (isEditing) {
                 return (
-                  <div key={b.id} className="bg-[#110d0a] rounded-lg p-4 border border-[#3a2e22] border-l-4" style={{ borderLeftColor: AREA_HEX[editForm.area] || '#9a8470' }}>
+                  <div key={b.id} className="p-4 rounded-xl border-l-4"
+                    style={{
+                      background: 'linear-gradient(135deg, #17142a 0%, #110e1c 100%)',
+                      border: '1px solid #2c2740',
+                      borderLeftColor: AREA_HEX[editForm.area] || '#9490aa',
+                    }}>
                     <div className="grid grid-cols-2 gap-3 mb-3">
                       {[['Inicio', 'start'], ['Fin', 'end']].map(([label, field]) => (
                         <div key={field}>
-                          <label className="font-cinzel text-[8px] text-[#5a4838] block mb-1.5 tracking-[0.2em] uppercase">{label}</label>
+                          <label className="font-cinzel text-[8px] text-[#4d4568] block mb-1.5 tracking-[0.2em] uppercase">{label}</label>
                           <input
                             type="time"
                             value={editForm[field]}
                             onChange={(e) => setEditForm((f) => ({ ...f, [field]: e.target.value }))}
-                            className="w-full bg-[#0a0806] rounded px-3 py-2 text-sm text-[#f0e6d0] border border-[#3a2e22] focus:outline-none focus:border-[#c9a254] transition-colors"
+                            style={inputStyle}
+                            onFocus={e => { e.target.style.borderColor = '#d4a956'; }}
+                            onBlur={e => { e.target.style.borderColor = '#2c2740'; }}
                           />
                         </div>
                       ))}
                     </div>
                     <div className="mb-3">
-                      <label className="font-cinzel text-[8px] text-[#5a4838] block mb-1.5 tracking-[0.2em] uppercase">Área</label>
+                      <label className="font-cinzel text-[8px] text-[#4d4568] block mb-1.5 tracking-[0.2em] uppercase">Área</label>
                       <select
                         value={editForm.area}
                         onChange={(e) => setEditForm((f) => ({ ...f, area: e.target.value, projectId: '' }))}
-                        className="w-full bg-[#0a0806] rounded px-3 py-2 text-sm text-[#f0e6d0] border border-[#3a2e22] focus:outline-none"
+                        style={inputStyle}
                       >
                         {Object.values(AREAS).map((a) => (
                           <option key={a.id} value={a.id}>{a.label}</option>
@@ -396,11 +445,11 @@ export default function DayPlanner() {
                     </div>
                     {editForm.area !== 'OTROS' && editAreaProjects.length > 0 && (
                       <div className="mb-3">
-                        <label className="font-cinzel text-[8px] text-[#5a4838] block mb-1.5 tracking-[0.2em] uppercase">Empresa (opcional)</label>
+                        <label className="font-cinzel text-[8px] text-[#4d4568] block mb-1.5 tracking-[0.2em] uppercase">Empresa (opcional)</label>
                         <select
                           value={editForm.projectId}
                           onChange={(e) => setEditForm((f) => ({ ...f, projectId: e.target.value }))}
-                          className="w-full bg-[#0a0806] rounded px-3 py-2 text-sm text-[#f0e6d0] border border-[#3a2e22] focus:outline-none"
+                          style={inputStyle}
                         >
                           <option value="">Sin empresa</option>
                           {editAreaProjects.map((p) => (
@@ -410,27 +459,30 @@ export default function DayPlanner() {
                       </div>
                     )}
                     <div className="mb-3">
-                      <label className="font-cinzel text-[8px] text-[#5a4838] block mb-1.5 tracking-[0.2em] uppercase">Notas (opcional)</label>
+                      <label className="font-cinzel text-[8px] text-[#4d4568] block mb-1.5 tracking-[0.2em] uppercase">Notas (opcional)</label>
                       <textarea
                         value={editForm.notes || ''}
                         onChange={(e) => setEditForm((f) => ({ ...f, notes: e.target.value }))}
                         rows={2}
                         placeholder="¿Qué planeas hacer en este bloque?"
-                        className="w-full bg-[#0a0806] rounded px-3 py-2 text-sm text-[#f0e6d0] border border-[#3a2e22] focus:outline-none focus:border-[#c9a254] resize-none placeholder-[#3a2e22] transition-colors"
+                        style={{ ...inputStyle, resize: 'none' }}
+                        onFocus={e => { e.target.style.borderColor = '#d4a956'; }}
+                        onBlur={e => { e.target.style.borderColor = '#2c2740'; }}
                       />
                     </div>
                     <div className="flex gap-2">
                       <button
                         onClick={() => saveEdit(b.id)}
                         disabled={saving}
-                        className="flex-1 font-cinzel text-[10px] tracking-[0.15em] uppercase bg-[#c9a254] hover:bg-[#d4b366] text-[#0a0806] py-2 rounded transition-colors disabled:opacity-50"
+                        className="flex-1 font-cinzel text-[10px] tracking-[0.15em] uppercase py-2 rounded transition-colors disabled:opacity-50 btn-primary"
                       >
                         {saving ? 'Guardando...' : 'Guardar'}
                       </button>
                       <button
                         onClick={() => setEditingId(null)}
                         disabled={saving}
-                        className="flex-1 font-cinzel text-[10px] tracking-[0.15em] uppercase bg-[#1a1410] hover:bg-[#2a1f14] text-[#5a4838] border border-[#3a2e22] py-2 rounded transition-colors disabled:opacity-50"
+                        className="flex-1 font-cinzel text-[10px] tracking-[0.15em] uppercase py-2 rounded transition-colors disabled:opacity-50"
+                        style={{ color: '#4d4568', border: '1px solid #2c2740', background: 'transparent' }}
                       >
                         Cancelar
                       </button>
@@ -440,33 +492,34 @@ export default function DayPlanner() {
               }
 
               return (
-                <div key={b.id} className="flex items-center justify-between bg-[#0a0806] rounded p-3 border border-[#3a2e22]">
+                <div key={b.id} className="flex items-center justify-between rounded-lg p-3 border border-[#2c2740]"
+                  style={{ background: '#0c0a14' }}>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className="font-mono text-sm text-[#f0e6d0]">
                         {minutesToTime(s)}–{minutesToTime(e)}
                       </span>
-                      <span className="text-[#9a8470] text-xs">({minutesToLabel(e - s)})</span>
+                      <span className="text-[#9490aa] text-xs">({minutesToLabel(e - s)})</span>
                       <AreaBadge area={area} />
                     </div>
                     {proj && (
-                      <p className="text-[#5a4838] text-xs mt-0.5 truncate">{proj.name}</p>
+                      <p className="text-[#4d4568] text-xs mt-0.5 truncate">{proj.name}</p>
                     )}
                     {b.notes && (
-                      <p className="text-[#9a8470] text-xs mt-1 italic leading-snug">{b.notes}</p>
+                      <p className="text-[#9490aa] text-xs mt-1 italic leading-snug">{b.notes}</p>
                     )}
                   </div>
                   <div className="flex gap-2 ml-3 shrink-0">
                     <button
                       onClick={() => startEdit(b)}
-                      className="text-[#5a4838] hover:text-[#c9a254] transition-colors text-sm"
+                      className="text-[#4d4568] hover:text-[#d4a956] transition-colors text-sm"
                       title="Editar bloque"
                     >
                       ✎
                     </button>
                     <button
                       onClick={() => removeBlock(b.id)}
-                      className="text-[#3a2e22] hover:text-[#8b1a2a] transition-colors"
+                      className="text-[#2c2740] hover:text-[#9b1f30] transition-colors"
                       title="Eliminar bloque"
                     >
                       ✕
@@ -481,22 +534,25 @@ export default function DayPlanner() {
 
       {/* Warnings */}
       {warnings.length > 0 && (
-        <div className="bg-[#110d0a] border border-[#8b1a2a]/40 rounded-lg p-4 mb-4">
-          <p className="font-cinzel text-[9px] text-[#8b1a2a] tracking-[0.2em] uppercase mb-3">
+        <div className="rounded-xl p-4 mb-4" style={{
+          background: 'rgba(155,31,48,0.06)',
+          border: '1px solid rgba(155,31,48,0.3)',
+        }}>
+          <p className="font-cinzel text-[9px] text-[#9b1f30] tracking-[0.2em] uppercase mb-3">
             Mínimos insuficientes
           </p>
           {warnings.map((w, i) => (
-            <p key={i} className="text-[#9a8470] text-sm">• {w}</p>
+            <p key={i} className="text-[#9490aa] text-sm">• {w}</p>
           ))}
           <div className="flex items-center gap-4 mt-3">
             {canActivateSpecial && (
               <button onClick={activateSpecialDay}
-                className="font-cinzel text-[9px] tracking-widest uppercase text-[#c9a254]/70 hover:text-[#c9a254] transition-colors">
+                className="font-cinzel text-[9px] tracking-widest uppercase text-[#d4a956]/70 hover:text-[#d4a956] transition-colors">
                 Activar Día Especial para continuar
               </button>
             )}
             <button onClick={addSpecialDay}
-              className="font-cinzel text-[9px] tracking-widest uppercase text-[#5a4838] hover:text-[#c9a254] transition-colors">
+              className="font-cinzel text-[9px] tracking-widest uppercase text-[#4d4568] hover:text-[#d4a956] transition-colors">
               + día especial
             </button>
           </div>
@@ -504,11 +560,12 @@ export default function DayPlanner() {
       )}
 
       {/* Confirm button */}
-      <div className="fixed bottom-0 left-0 right-0 md:left-60 p-4 bg-[#0a0806]/95 border-t border-[#3a2e22]">
+      <div className="fixed bottom-0 left-0 right-0 md:left-60 p-4 border-t border-[#2c2740]"
+        style={{ background: 'rgba(9,8,14,0.97)', backdropFilter: 'blur(12px)' }}>
         <button
           onClick={handleConfirm}
           disabled={blocks.length === 0 || confirming}
-          className="w-full max-w-2xl mx-auto block font-cinzel font-bold bg-[#f0e6d0] text-[#0a0806] py-4 rounded text-sm tracking-[0.15em] uppercase active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed transition-transform"
+          className="w-full max-w-2xl mx-auto block btn-primary disabled:opacity-30 disabled:cursor-not-allowed"
         >
           {confirming ? 'Confirmando...' : 'Confirmar Planificación →'}
         </button>

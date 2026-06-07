@@ -6,7 +6,7 @@ import api from '../../api/index.js';
 
 const AREA_HEX = {
   NEGOCIO: '#3B82F6', SEGUNDA: '#A855F7', ESTUDIO: '#F59E0B',
-  EJERCICIO: '#10B981', OTROS: '#9a8470',
+  EJERCICIO: '#10B981', OTROS: '#9490aa',
 };
 
 function useNowMinutes() {
@@ -33,6 +33,20 @@ function minutesToLabel(m) {
   return `${m}min`;
 }
 
+const inputStyle = {
+  width: '100%',
+  background: '#09080e',
+  color: '#f0e6d0',
+  fontSize: '14px',
+  borderRadius: '8px',
+  padding: '10px 12px',
+  border: '1px solid #2c2740',
+  outline: 'none',
+  resize: 'none',
+  fontFamily: "'Crimson Text', serif",
+  transition: 'border-color 0.2s',
+};
+
 // ── Evidence form ─────────────────────────────────────────────────────────────
 export function EvidenceForm({ block, onSubmit, onCancel }) {
   const [q1,         setQ1]         = useState('');
@@ -42,7 +56,7 @@ export function EvidenceForm({ block, onSubmit, onCancel }) {
   const [reason,     setReason]     = useState('');
   const [saving,     setSaving]     = useState(false);
 
-  const areaColor = AREA_HEX[block.area_id] || '#9a8470';
+  const areaColor = AREA_HEX[block.area_id] || '#9490aa';
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -64,8 +78,13 @@ export function EvidenceForm({ block, onSubmit, onCancel }) {
 
   return (
     <form onSubmit={handleSubmit}
-      className="bg-[#110d0a] rounded-lg p-4 border border-[#3a2e22] border-l-4 mt-3"
-      style={{ borderLeftColor: areaColor }}>
+      className="rounded-xl p-4 mt-3"
+      style={{
+        background: 'linear-gradient(135deg, #17142a 0%, #110e1c 100%)',
+        border: '1px solid #2c2740',
+        borderLeftWidth: 4,
+        borderLeftColor: areaColor,
+      }}>
 
       {/* Block info */}
       <div className="flex items-center justify-between mb-4">
@@ -73,14 +92,14 @@ export function EvidenceForm({ block, onSubmit, onCancel }) {
           <p className="text-[#f0e6d0] font-bold text-sm">
             {block.project_name || AREAS[block.area_id]?.label}
           </p>
-          <p className="font-mono text-[#9a8470] text-xs mt-0.5">
+          <p className="font-mono text-[#9490aa] text-xs mt-0.5">
             {minutesToTime(block.start_minutes)}–{minutesToTime(block.end_minutes)}
             {' · '}{minutesToLabel(block.end_minutes - block.start_minutes)}
           </p>
         </div>
         {onCancel && (
           <button type="button" onClick={onCancel}
-            className="text-[#3a2e22] hover:text-[#9a8470] text-sm transition-colors ml-2">✕</button>
+            className="text-[#2c2740] hover:text-[#9490aa] text-sm transition-colors ml-2">✕</button>
         )}
       </div>
 
@@ -88,15 +107,15 @@ export function EvidenceForm({ block, onSubmit, onCancel }) {
       <label className="flex items-center gap-2 mb-4 cursor-pointer group">
         <div
           onClick={() => setNoLohice(v => !v)}
-          className={`w-4 h-4 rounded border flex items-center justify-center shrink-0 transition-colors ${
-            noLohice
-              ? 'bg-[#8b1a2a] border-[#8b1a2a]'
-              : 'bg-transparent border-[#3a2e22] group-hover:border-[#9a8470]'
-          }`}
+          className="w-4 h-4 rounded flex items-center justify-center shrink-0 transition-colors"
+          style={{
+            background: noLohice ? '#9b1f30' : 'transparent',
+            border: noLohice ? '1px solid #9b1f30' : '1px solid #2c2740',
+          }}
         >
           {noLohice && <span className="text-[#f0e6d0] text-[9px] leading-none">✕</span>}
         </div>
-        <span className="text-sm text-[#9a8470]">No lo hice</span>
+        <span className="text-sm text-[#9490aa]">No lo hice</span>
       </label>
 
       {noLohice ? (
@@ -104,7 +123,9 @@ export function EvidenceForm({ block, onSubmit, onCancel }) {
           placeholder="¿Por qué? (opcional)"
           value={reason}
           onChange={(e) => setReason(e.target.value)}
-          className="w-full bg-[#0a0806] text-[#f0e6d0] text-sm rounded px-3 py-2.5 outline-none border border-[#3a2e22] focus:border-[#8b1a2a] mb-4 placeholder-[#3a2e22] transition-colors"
+          style={{ ...inputStyle, resize: undefined, marginBottom: '16px' }}
+          onFocus={e => { e.target.style.borderColor = '#9b1f30'; }}
+          onBlur={e => { e.target.style.borderColor = '#2c2740'; }}
         />
       ) : (
         <>
@@ -114,12 +135,14 @@ export function EvidenceForm({ block, onSubmit, onCancel }) {
             value={q1}
             onChange={(e) => setQ1(e.target.value)}
             rows={2}
-            className="w-full bg-[#0a0806] text-[#f0e6d0] text-sm rounded px-3 py-2.5 outline-none border border-[#3a2e22] focus:border-[#c9a254] mb-3 resize-none placeholder-[#3a2e22] transition-colors"
+            style={{ ...inputStyle, marginBottom: '12px' }}
+            onFocus={e => { e.target.style.borderColor = '#d4a956'; }}
+            onBlur={e => { e.target.style.borderColor = '#2c2740'; }}
           />
           <div className="mb-3">
             <div className="flex justify-between mb-1.5">
-              <span className="font-cinzel text-[8px] text-[#5a4838] uppercase tracking-[0.15em]">Nivel de concentración</span>
-              <span className="font-mono text-[#c9a254] text-xs font-bold">{focusLevel}/10</span>
+              <span className="font-cinzel text-[8px] text-[#4d4568] uppercase tracking-[0.15em]">Nivel de concentración</span>
+              <span className="font-mono text-[#d4a956] text-xs font-bold">{focusLevel}/10</span>
             </div>
             <input type="range" min={1} max={10} value={focusLevel}
               onChange={(e) => setFocusLevel(Number(e.target.value))} className="w-full" />
@@ -133,7 +156,7 @@ export function EvidenceForm({ block, onSubmit, onCancel }) {
       <button
         type="submit"
         disabled={saving || (!noLohice && !q1.trim())}
-        className="w-full font-cinzel font-bold bg-[#f0e6d0] text-[#0a0806] py-2.5 rounded text-xs tracking-[0.12em] uppercase active:scale-95 disabled:opacity-30 transition-transform"
+        className="w-full btn-primary disabled:opacity-30"
       >
         {saving ? 'Enviando...' : 'Enviar Evidencia →'}
       </button>
@@ -156,7 +179,8 @@ export function NotificationBadge() {
   if (count === 0) return null;
 
   return (
-    <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-[#8b1a2a] font-mono text-[#f0e6d0] text-[8px] font-black">
+    <span className="inline-flex items-center justify-center w-4 h-4 rounded-full font-mono text-[#f0e6d0] text-[8px] font-black"
+      style={{ background: '#9b1f30', boxShadow: '0 0 6px rgba(155,31,48,0.5)' }}>
       {count}
     </span>
   );
@@ -188,54 +212,59 @@ export default function EvidenceInline() {
   if (pending.length === 0) return null;
 
   return (
-    <div className="mb-4 bg-[#110d0a] rounded-xl border border-[#8b1a2a]/35 overflow-hidden">
+    <div className="mb-4 overflow-hidden rounded-xl"
+      style={{
+        background: 'linear-gradient(135deg, #1a0e14 0%, #110e1c 100%)',
+        border: '1px solid rgba(155,31,48,0.35)',
+      }}>
       {/* Header */}
       <button
         onClick={() => setCollapsed(v => !v)}
-        className="w-full flex items-center gap-3 px-4 py-3 hover:bg-[#1a1410] transition-colors"
+        className="w-full flex items-center gap-3 px-4 py-3 transition-colors"
+        style={{ background: 'transparent' }}
+        onMouseOver={e => e.currentTarget.style.background = 'rgba(255,255,255,0.02)'}
+        onMouseOut={e => e.currentTarget.style.background = 'transparent'}
       >
-        {/* Bell icon */}
         <div className="relative shrink-0">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
-            stroke="#8b1a2a" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+            stroke="#9b1f30" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
             <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
             <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
           </svg>
         </div>
 
         <div className="flex-1 text-left">
-          <p className="font-cinzel text-[9px] text-[#8b1a2a] uppercase tracking-[0.25em]">
+          <p className="font-cinzel text-[9px] text-[#9b1f30] uppercase tracking-[0.25em]">
             Evidencias pendientes
           </p>
-          <p className="text-[#9a8470] text-xs mt-0.5">
+          <p className="text-[#9490aa] text-xs mt-0.5">
             {pending.length} {pending.length === 1 ? 'bloque sin' : 'bloques sin'} evidencia — no suman puntos
           </p>
         </div>
 
         <div className="flex items-center gap-2 shrink-0">
-          <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-[#8b1a2a] font-mono text-[#f0e6d0] text-[9px] font-black">
+          <span className="inline-flex items-center justify-center w-5 h-5 rounded-full font-mono text-[#f0e6d0] text-[9px] font-black"
+            style={{ background: '#9b1f30', boxShadow: '0 0 8px rgba(155,31,48,0.4)' }}>
             {pending.length}
           </span>
-          <span className="text-[#5a4838] text-xs">{collapsed ? '↓' : '↑'}</span>
+          <span className="text-[#4d4568] text-xs">{collapsed ? '↓' : '↑'}</span>
         </div>
       </button>
 
-      {/* Ornament */}
       {!collapsed && (
         <div className="flex items-center gap-0 px-4">
-          <div className="flex-1 h-px bg-[#8b1a2a]/20" />
-          <span className="text-[#8b1a2a]/30 text-[8px] px-2">◆</span>
-          <div className="flex-1 h-px bg-[#8b1a2a]/20" />
+          <div className="flex-1 h-px" style={{ background: 'rgba(155,31,48,0.2)' }} />
+          <span className="text-[9px] px-2" style={{ color: 'rgba(155,31,48,0.3)' }}>◆</span>
+          <div className="flex-1 h-px" style={{ background: 'rgba(155,31,48,0.2)' }} />
         </div>
       )}
 
-      {/* Items */}
       {!collapsed && (
         <div className="px-4 pb-4 pt-2 flex flex-col gap-2">
           {pending.map(b => {
             const s       = b.start_minutes ?? b.startMinutes;
             const e       = b.end_minutes   ?? b.endMinutes;
-            const color   = AREA_HEX[b.area_id] || '#9a8470';
+            const color   = AREA_HEX[b.area_id] || '#9490aa';
             const elapsed = nowMins - e;
             const elapsedLabel = elapsed < 60
               ? `hace ${elapsed}min`
@@ -243,42 +272,42 @@ export default function EvidenceInline() {
 
             return (
               <div key={b.id}>
-                {/* Block row */}
                 {openBlockId !== b.id && (
-                  <div className="flex items-center gap-3 bg-[#0a0806] rounded-lg px-3 py-2.5 border border-[#3a2e22]">
-                    {/* Area dot */}
+                  <div className="flex items-center gap-3 rounded-lg px-3 py-2.5"
+                    style={{ background: '#09080e', border: '1px solid #2c2740' }}>
                     <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: color }} />
 
-                    {/* Info */}
                     <div className="flex-1 min-w-0">
                       <p className="text-[#f0e6d0] text-sm truncate">
                         {b.project_name || AREAS[b.area_id]?.label}
                       </p>
                       <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-                        <span className="font-mono text-[#9a8470] text-xs">
+                        <span className="font-mono text-[#9490aa] text-xs">
                           {minutesToTime(s)}–{minutesToTime(e)}
                         </span>
-                        <span className="font-cinzel text-[8px] text-[#5a4838] uppercase tracking-widest">
+                        <span className="font-cinzel text-[8px] text-[#4d4568] uppercase tracking-widest">
                           {minutesToLabel(e - s)}
                         </span>
-                        <span className="font-cinzel text-[8px] text-[#8b1a2a] uppercase tracking-widest">
+                        <span className="font-cinzel text-[8px] uppercase tracking-widest" style={{ color: '#9b1f30' }}>
                           {elapsedLabel}
                         </span>
                       </div>
                     </div>
 
-                    {/* Action */}
                     <button
                       onClick={() => setOpenBlockId(b.id)}
-                      className="font-cinzel text-[9px] tracking-[0.1em] uppercase shrink-0 px-3 py-1.5 rounded border border-[#c9a254]/40 text-[#c9a254] bg-[#c9a254]/08 hover:bg-[#c9a254]/15 active:scale-95 transition-all"
-                      style={{ backgroundColor: 'rgba(201,162,84,0.08)' }}
+                      className="font-cinzel text-[9px] tracking-[0.1em] uppercase shrink-0 px-3 py-1.5 rounded active:scale-95 transition-all"
+                      style={{
+                        color: '#d4a956',
+                        border: '1px solid rgba(212,169,86,0.4)',
+                        background: 'rgba(212,169,86,0.08)',
+                      }}
                     >
                       Adjuntar
                     </button>
                   </div>
                 )}
 
-                {/* Inline form */}
                 {openBlockId === b.id && (
                   <EvidenceForm
                     block={b}

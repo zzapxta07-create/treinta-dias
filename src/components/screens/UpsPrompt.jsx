@@ -42,34 +42,44 @@ export default function UpsPrompt() {
 
   if (!hasUps) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-[#0a0806] px-6 text-center">
+      <div className="min-h-screen flex flex-col items-center justify-center px-6 text-center"
+        style={{ background: '#09080e' }}>
         <div className="fixed inset-0 pointer-events-none"
           style={{ background: 'radial-gradient(ellipse at center, transparent 30%, rgba(0,0,0,0.7) 100%)' }} />
         <div className="relative max-w-sm">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full border border-[#c9a254]/30 bg-[#110d0a] mb-5">
-            <span className="text-[#c9a254] text-2xl">⏳</span>
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full mb-5"
+            style={{ border: '1px solid rgba(212,169,86,0.3)', background: '#110e1c' }}>
+            <span style={{ color: '#d4a956', fontSize: '24px' }}>⏳</span>
           </div>
-          <p className="font-cinzel text-[9px] text-[#5a4838] tracking-[0.4em] uppercase mb-2">
+          <p className="font-cinzel text-[9px] tracking-[0.4em] uppercase mb-2" style={{ color: '#4d4568' }}>
             Entrada Tardía
           </p>
-          <h1 className="font-cinzel text-2xl font-bold text-[#f0e6d0] tracking-[0.06em] mb-3">
+          <h1 className="font-cinzel text-2xl font-bold tracking-[0.06em] mb-3" style={{ color: '#f0e6d0' }}>
             Más de las 8:00am
           </h1>
-          <p className="text-[#9a8470] mb-8 leading-relaxed text-sm">
+          <p className="mb-8 leading-relaxed text-sm" style={{ color: '#9490aa' }}>
             No tienes salvoconducto disponible. Puedes continuar — quedará registrado como entrada tardía.
           </p>
           <div className="flex flex-col gap-3 w-full">
             <button
               onClick={continueAnyway}
               disabled={loading}
-              className="font-cinzel font-bold bg-[#c9a254]/15 text-[#c9a254] border border-[#c9a254]/30 py-4 px-6 rounded text-sm tracking-[0.12em] uppercase active:scale-95 disabled:opacity-50 transition-transform"
+              className="font-cinzel font-bold py-4 px-6 rounded text-sm tracking-[0.12em] uppercase active:scale-95 disabled:opacity-50 transition-transform"
+              style={{
+                background: 'rgba(212,169,86,0.1)',
+                color: '#d4a956',
+                border: '1px solid rgba(212,169,86,0.3)',
+              }}
             >
               Continuar de todas formas
             </button>
             <button
               onClick={loseDay}
               disabled={loading}
-              className="font-cinzel text-[9px] text-[#5a4838] tracking-widest uppercase hover:text-[#8b1a2a] transition-colors py-2 disabled:opacity-50"
+              className="font-cinzel text-[9px] tracking-widest uppercase py-2 disabled:opacity-50 transition-colors"
+              style={{ color: '#4d4568' }}
+              onMouseOver={e => { e.currentTarget.style.color = '#9b1f30'; }}
+              onMouseOut={e => { e.currentTarget.style.color = '#4d4568'; }}
             >
               Marcar día como perdido (−150 pts)
             </button>
@@ -80,47 +90,55 @@ export default function UpsPrompt() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-[#0a0806] px-6 text-center">
+    <div className="min-h-screen flex flex-col items-center justify-center px-6 text-center"
+      style={{ background: '#09080e' }}>
       <div className="fixed inset-0 pointer-events-none"
         style={{ background: 'radial-gradient(ellipse at center, transparent 30%, rgba(0,0,0,0.7) 100%)' }} />
       <div className="relative max-w-sm">
-        <div className="inline-flex items-center justify-center w-16 h-16 rounded-full border border-[#c9a254]/40 bg-[#110d0a] mb-5">
-          <span className="text-[#c9a254] text-2xl">⚡</span>
+        <div className="inline-flex items-center justify-center w-16 h-16 rounded-full mb-5"
+          style={{ border: '1px solid rgba(212,169,86,0.4)', background: '#110e1c' }}>
+          <span style={{ color: '#d4a956', fontSize: '24px' }}>⚡</span>
         </div>
-        <p className="font-cinzel text-[9px] text-[#5a4838] tracking-[0.4em] uppercase mb-2">
+        <p className="font-cinzel text-[9px] tracking-[0.4em] uppercase mb-2" style={{ color: '#4d4568' }}>
           Entrada Tardía
         </p>
-        <h1 className="font-cinzel text-2xl font-bold text-[#f0e6d0] tracking-[0.06em] mb-3">
+        <h1 className="font-cinzel text-2xl font-bold tracking-[0.06em] mb-3" style={{ color: '#f0e6d0' }}>
           Más de las 8:00am
         </h1>
-        <p className="text-[#9a8470] mb-8 leading-relaxed text-sm">
-          Tienes <span className="text-[#c9a254] font-bold">1 Salvoconducto</span> disponible.
+        <p className="mb-8 leading-relaxed text-sm" style={{ color: '#9490aa' }}>
+          Tienes <span style={{ color: '#d4a956', fontWeight: 'bold' }}>1 Salvoconducto</span> disponible.
           Úsalo para que la jornada continúe sin penalización.
         </p>
         <div className="flex flex-col gap-3 w-full">
           <button
             onClick={useUps}
             disabled={loading}
-            className="font-cinzel font-bold bg-[#f0e6d0] text-[#0a0806] py-4 px-6 rounded text-sm tracking-[0.12em] uppercase active:scale-95 disabled:opacity-50 transition-transform"
+            className="w-full btn-primary disabled:opacity-50"
           >
             Usar Salvoconducto
           </button>
           <button
             onClick={continueAnyway}
             disabled={loading}
-            className="font-cinzel text-[9px] text-[#c9a254]/60 tracking-widest uppercase hover:text-[#c9a254] transition-colors py-2 disabled:opacity-50"
+            className="font-cinzel text-[9px] tracking-widest uppercase py-2 disabled:opacity-50 transition-colors"
+            style={{ color: 'rgba(212,169,86,0.5)' }}
+            onMouseOver={e => { e.currentTarget.style.color = '#d4a956'; }}
+            onMouseOut={e => { e.currentTarget.style.color = 'rgba(212,169,86,0.5)'; }}
           >
             Continuar sin salvoconducto (entrada tarde)
           </button>
           <button
             onClick={loseDay}
             disabled={loading}
-            className="font-cinzel text-[9px] text-[#3a2e22] tracking-widest uppercase hover:text-[#8b1a2a] transition-colors py-1 disabled:opacity-50"
+            className="font-cinzel text-[9px] tracking-widest uppercase py-1 disabled:opacity-50 transition-colors"
+            style={{ color: '#2c2740' }}
+            onMouseOver={e => { e.currentTarget.style.color = '#9b1f30'; }}
+            onMouseOut={e => { e.currentTarget.style.color = '#2c2740'; }}
           >
             Marcar día como perdido (−150 pts)
           </button>
         </div>
-        <p className="font-cinzel text-[#3a2e22] text-[7px] mt-6 uppercase tracking-widest">
+        <p className="font-cinzel text-[7px] mt-6 uppercase tracking-widest" style={{ color: '#2c2740' }}>
           El salvoconducto solo puede usarse una vez por mes.
         </p>
       </div>

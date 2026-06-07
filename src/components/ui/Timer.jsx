@@ -19,9 +19,12 @@ export default function Timer({ deadline, onExpire, className = "" }) {
   const urgent = secs < 120;
   return (
     <span
-      className={`font-mono text-5xl font-black ${
-        urgent ? "text-red-400 animate-pulse" : "text-white"
-      } ${className}`}
+      className={`font-mono text-5xl font-black ${className}`}
+      style={{
+        color: urgent ? '#c43040' : '#f0e6d0',
+        textShadow: urgent ? '0 0 20px rgba(196,48,64,0.5)' : '0 0 30px rgba(212,169,86,0.15)',
+        animation: urgent ? 'pulse 1s ease-in-out infinite' : 'none',
+      }}
     >
       {formatCountdown(secs)}
     </span>
