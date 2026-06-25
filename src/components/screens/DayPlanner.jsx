@@ -300,8 +300,8 @@ export default function DayPlanner() {
                   style={{
                     left:    `${toPercent(s)}%`,
                     width:   `${toWidth(s, e)}%`,
-                    backgroundColor: AREA_HEX[area] + '40',
-                    borderLeft: `2px solid ${AREA_HEX[area]}`,
+                    backgroundColor: (areaHex[area] || '#9490aa') + '40',
+                    borderLeft: `2px solid ${areaHex[area] || '#9490aa'}`,
                   }}
                   title={`${minutesToTime(s)}–${minutesToTime(e)} · ${areaMap[area]?.label}`}
                 />
@@ -339,8 +339,8 @@ export default function DayPlanner() {
             onChange={(e) => setForm((f) => ({ ...f, area: e.target.value, projectId: '' }))}
             style={inputStyle}
           >
-            {Object.values(AREAS).map((a) => (
-              <option key={a.id} value={a.id}>{a.label}</option>
+            {areas.map((a) => (
+              <option key={a.id} value={a.id}>{a.emoji} {a.label}</option>
             ))}
           </select>
         </div>
@@ -412,7 +412,7 @@ export default function DayPlanner() {
                     style={{
                       background: 'linear-gradient(135deg, #17142a 0%, #110e1c 100%)',
                       border: '1px solid #2c2740',
-                      borderLeftColor: AREA_HEX[editForm.area] || '#9490aa',
+                      borderLeftColor: areaHex[editForm.area] || '#9490aa',
                     }}>
                     <div className="grid grid-cols-2 gap-3 mb-3">
                       {[['Inicio', 'start'], ['Fin', 'end']].map(([label, field]) => (
