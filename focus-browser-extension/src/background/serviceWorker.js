@@ -127,54 +127,16 @@ async function getActiveTabId() {
 }
 
 // ── Intent gate for links opened in new tabs ─────────────────────────────────
+// Redirect immediately in onCreated so we beat declarativeNetRequest blocking.
+// pendingUrl is populated when a link is Ctrl+Clicked or opened via target="_blank".
+// Empty-URL tabs (Ctrl+T, typed URLs) have pendingUrl='' so they're skipped.
 
-async function getNewTabIds() {
-  try {
-    const { fbNewTabs = [] } = await chrome.storage.session.get('fbNewTabs');
-    return new Set(fbNewTabs);
-  } catch { return new Set(); }
-}
-
-async function setNewTabIds(set) {
-  try { await chrome.storage.session.set({ fbNewTabs: [...set] }); } catch {}
-}
-
-chrome.tabs.onCreated.addListener(async (tab) => {
+chrome.tabs.onCreated.addListener((tab) => {
   const url = tab.pendingUrl || tab.url || '';
-  if (url.startsWith('chrome-extension://') || url.startsWith('chrome://')) return;
-  const ids = await getNewTabIds();
-  ids.add(tab.id);
-  await setNewTabIds(ids);
-});
-
-chrome.tabs.onRemoved.addListener(async (tabId) => {
-  const ids = await getNewTabIds();
-  if (ids.has(tabId)) { ids.delete(tabId); await setNewTabIds(ids); }
-});
-
-chrome.webNavigation.onCommitted.addListener(async (details) => {
-  if (details.frameId !== 0) return;
-  const url = details.url;
   if (!url.startsWith('http')) return;
 
-  const extBase = chrome.runtime.getURL('');
-  if (url.startsWith(extBase)) return;
-
-  const ids = await getNewTabIds();
-  if (!ids.has(details.tabId)) return;
-
-  // Only intercept link clicks (Ctrl+Click, right-click → new tab, target="_blank")
-  if (details.transitionType !== 'link') {
-    ids.delete(details.tabId);
-    await setNewTabIds(ids);
-    return;
-  }
-
-  ids.delete(details.tabId);
-  await setNewTabIds(ids);
-
   const newtabUrl = chrome.runtime.getURL(`newtab.html?url=${encodeURIComponent(url)}`);
-  chrome.tabs.update(details.tabId, { url: newtabUrl });
+  chrome.tabs.update(tab.id, { url: newtabUrl });
 });
 
 // Alarm handler for rule restoration fallback
