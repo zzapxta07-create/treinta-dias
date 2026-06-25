@@ -30,6 +30,8 @@ function buildRules(distractors) {
     condition: {
       urlFilter: `||${domain}`,
       resourceTypes: ['main_frame'],
+      // Don't block navigations that originate from the same domain (already-open tabs)
+      excludedInitiatorDomains: [domain],
     },
   }));
 }
@@ -159,13 +161,8 @@ chrome.tabs.onCreated.addListener(async (tab) => {
   try { if (SEARCH_ENGINE_RE.test(new URL(url).hostname)) return; } catch {}
 
 
-  // Same-domain links open freely (e.g. YouTube → YouTube, GitHub → GitHub)
-  if (tab.openerTabId) {
-    try {
-      const opener = await chrome.tabs.get(tab.openerTabId);
-      if (getBaseDomain(opener.url) === getBaseDomain(url)) return;
-    } catch {}
-  }
+  // Any link clicked from another tab opens freely (user intentionally navigated)
+  if (tab.openerTabId) return;
 
   const newtabUrl = chrome.runtime.getURL(`newtab.html?url=${encodeURIComponent(url)}`);
   chrome.tabs.update(tab.id, { url: newtabUrl });
