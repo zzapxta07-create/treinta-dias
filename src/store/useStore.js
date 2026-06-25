@@ -3,7 +3,7 @@ import { persist } from 'zustand/middleware';
 
 export const useStore = create(
   persist(
-    (set, get) => ({
+    (set) => ({
       // ─── Auth (persisted) ────────────────────────────────────
       token: null,
       user: null,
@@ -11,9 +11,10 @@ export const useStore = create(
       // ─── App state from API (not persisted) ──────────────────
       currentDay: null,
       config: null,
+      areas: null,
 
       // ─── Client-side timers (ephemeral) ──────────────────────
-      ritualTimer: null,    // { deadline }
+      ritualTimer: null,
 
       // ─── Actions ─────────────────────────────────────────────
       setAuth(token, user) {
@@ -21,7 +22,7 @@ export const useStore = create(
       },
 
       logout() {
-        set({ token: null, user: null, currentDay: null, config: null, ritualTimer: null });
+        set({ token: null, user: null, currentDay: null, config: null, ritualTimer: null, areas: null });
       },
 
       setCurrentDay(day) {
@@ -30,6 +31,10 @@ export const useStore = create(
 
       setConfig(config) {
         set({ config });
+      },
+
+      setAreas(areas) {
+        set({ areas });
       },
 
       startRitualTimer() {
@@ -42,7 +47,6 @@ export const useStore = create(
     }),
     {
       name: 'productivity-auth',
-      // Only persist auth — everything else comes from the backend
       partialize: (state) => ({ token: state.token, user: state.user }),
     }
   )

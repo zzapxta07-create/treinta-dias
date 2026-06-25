@@ -5,21 +5,17 @@ import { useCurrentTime } from '../../hooks/useCurrentTime';
 import { useActiveBlock } from '../../hooks/useActiveBlock';
 import { calcDayScore, areaMinutesFromBlocks } from '../../utils/scoring';
 import { formatTime, minutesToLabel, minutesToTime, timeToMinutes } from '../../utils/dateUtils';
-import { AREAS, MANDATORY_AREAS } from '../../data/areas';
+import { useAreas, useAreaMap } from '../../hooks/useAreas';
 import ScoreRing from '../ui/ScoreRing';
 import EvidenceInline, { EvidenceForm, NotificationBadge } from '../ui/EvidenceInline';
 import AiChat from '../ui/AiChat';
 import { SectionTitle, DiamondOrnament } from '../ui/Ornaments';
 import api from '../../api/index.js';
 
-const AREA_MINS = { NEGOCIO: 300, SEGUNDA: 60, ESTUDIO: 180, EJERCICIO: 30 };
-const AREA_HEX  = {
-  NEGOCIO: '#3B82F6', SEGUNDA: '#A855F7', ESTUDIO: '#F59E0B',
-  EJERCICIO: '#10B981', OTROS: '#6B7280',
-};
 
 // ── Inline block editor ──────────────────────────────────────────────────────
 function BlockEditRow({ block, projects, onSave, onCancel }) {
+  const areas = useAreas();
   const s0 = block.start_minutes ?? block.startMinutes;
   const e0 = block.end_minutes   ?? block.endMinutes;
   const [start,  setStart]  = useState(minutesToTime(s0));
@@ -62,7 +58,7 @@ function BlockEditRow({ block, projects, onSave, onCancel }) {
         ))}
       </div>
       <select value={area} onChange={(e) => setArea(e.target.value)} style={{ ...inputStyle, marginBottom: '8px' }}>
-        {Object.values(AREAS).map((a) => <option key={a.id} value={a.id}>{a.label}</option>)}
+        {areas.map((a) => <option key={a.id} value={a.id}>{a.emoji} {a.label}</option>)}
       </select>
       {err && <p className="text-[#9b1f30] text-xs mb-2">{err}</p>}
       <div className="flex gap-2">
@@ -88,6 +84,7 @@ export default function Dashboard({ setNavScreen }) {
   const config        = useStore((s) => s.config);
   const setCurrentDay = useStore((s) => s.setCurrentDay);
   const activeBlock   = useActiveBlock();
+  const areaMap       = useAreaMap();
 
   const [recentDays,       setRecentDays]      = useState([]);
   const [showEvForm,       setShowEvForm]       = useState(false);
@@ -135,7 +132,7 @@ export default function Dashboard({ setNavScreen }) {
   }));
 
   const areaId          = activeBlock?.area_id || activeBlock?.area;
-  const activeAreaColor = AREA_HEX[areaId] || '#6B7280';
+  const activeAreaColor = areaMap[areaId]?.color || '#6B7280';
   const activeStart     = activeBlock ? (activeBlock.start_minutes ?? activeBlock.startMinutes) : 0;
   const activeEnd       = activeBlock ? (activeBlock.end_minutes   ?? activeBlock.endMinutes)   : 0;
   const activeRemain    = activeBlock ? Math.max(0, activeEnd - currentMins) : 0;
@@ -226,7 +223,7 @@ export default function Dashboard({ setNavScreen }) {
                   <p className="font-cinzel text-[8px] font-semibold uppercase tracking-[0.2em] mb-1"
                      style={{ color: activeAreaColor }}>En curso</p>
                   <p className="text-[#f0e6d0] font-semibold text-base leading-tight truncate">
-                    {activeBlock.project_name || AREAS[areaId]?.label || '—'}
+                    {activeBlock.project_name || areaMap[areaId]?.label || '—'}
                   </p>
                   <p className="font-mono text-[#9490aa] text-xs mt-0.5">
                     {minutesToTime(activeStart)}–{minutesToTime(activeEnd)}
@@ -293,7 +290,7 @@ export default function Dashboard({ setNavScreen }) {
               <SectionTitle>Próximos bloques</SectionTitle>
               <div className="flex flex-col">
                 {upcomingBlocks.map((b) => {
-                  const bc = AREA_HEX[b.area_id || b.area] || '#6B7280';
+                  const bc = areaMap[b.area_id || b.area]?.color || '#6B7280';
                   return (
                     <div key={b.id} className="flex items-center gap-3 py-2.5" style={{ borderBottom: '1px solid #1e1b2e' }}>
                       <p className="font-mono text-sm text-[#f0e6d0] w-10 shrink-0">
@@ -301,7 +298,7 @@ export default function Dashboard({ setNavScreen }) {
                       </p>
                       <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: bc, boxShadow: `0 0 4px ${bc}80` }} />
                       <p className="text-[#9490aa] text-sm truncate flex-1">
-                        {b.project_name || AREAS[b.area_id || b.area]?.label || '—'}
+                        {b.project_name || areaMap[b.area_id || b.area]?.label || '—'}
                       </p>
                       <p className="text-[#4d4568] text-xs shrink-0">
                         {minutesToLabel((b.end_minutes ?? b.endMinutes) - (b.start_minutes ?? b.startMinutes))}
@@ -340,7 +337,7 @@ export default function Dashboard({ setNavScreen }) {
                   {allBlocks.map((b) => {
                     const s = b.start_minutes ?? b.startMinutes;
                     const e = b.end_minutes   ?? b.endMinutes;
-                    const bc = AREA_HEX[b.area_id || b.area] || '#6B7280';
+                    const bc = areaMap[b.area_id || b.area]?.color || '#6B7280';
                     const proj = projects.find((p) => p.id === b.project_id);
                     if (editingBlockId === b.id) {
                       return <BlockEditRow key={b.id} block={b} projects={projects}
@@ -352,7 +349,7 @@ export default function Dashboard({ setNavScreen }) {
                         <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: bc }} />
                         <p className="font-mono text-xs text-[#f0e6d0] shrink-0">{minutesToTime(s)}–{minutesToTime(e)}</p>
                         <p className="text-[#9490aa] text-sm truncate flex-1">
-                          {proj?.name || AREAS[b.area_id || b.area]?.label || b.area_id}
+                          {proj?.name || areaMap[b.area_id || b.area]?.label || b.area_id}
                         </p>
                         <button onClick={() => setEditingBlockId(b.id)}
                           className="text-[#4d4568] hover:text-[#d4a956] text-sm transition-colors shrink-0 px-1">✎</button>
@@ -418,26 +415,25 @@ export default function Dashboard({ setNavScreen }) {
           <div className="rounded-xl p-4" style={panelStyle}>
             <SectionTitle>Mínimos del día</SectionTitle>
             <div className="flex flex-col gap-3">
-              {MANDATORY_AREAS.map((id) => {
-                const area = AREAS[id];
-                const done = areaMins[id] || 0;
-                const ok   = done >= AREA_MINS[id];
-                const pct  = Math.min(100, (done / AREA_MINS[id]) * 100);
+              {Object.values(areaMap).filter(a => a.min_minutes > 0).map((area) => {
+                const done = areaMins[area.id] || 0;
+                const ok   = done >= area.min_minutes;
+                const pct  = Math.min(100, (done / area.min_minutes) * 100);
                 return (
-                  <div key={id}>
+                  <div key={area.id}>
                     <div className="flex justify-between mb-1.5">
                       <span className={`text-sm ${ok ? 'text-[#d4a956]' : 'text-[#9490aa]'}`}>
-                        {ok ? '✓ ' : ''}{area.label}
+                        {ok ? '✓ ' : ''}{area.emoji} {area.label}
                       </span>
                       <span className={`font-mono text-xs ${ok ? 'text-[#d4a956]' : 'text-[#4d4568]'}`}>
-                        {minutesToLabel(done)} / {minutesToLabel(AREA_MINS[id])}
+                        {minutesToLabel(done)} / {minutesToLabel(area.min_minutes)}
                       </span>
                     </div>
                     <div className="h-1 rounded-full overflow-hidden" style={{ background: '#2c2740' }}>
                       <div className="h-full rounded-full transition-all"
                         style={{
                           width: `${pct}%`,
-                          backgroundColor: ok ? '#d4a956' : AREA_HEX[id],
+                          backgroundColor: ok ? '#d4a956' : area.color,
                           boxShadow: ok ? '0 0 6px rgba(212,169,86,0.3)' : 'none',
                         }} />
                     </div>

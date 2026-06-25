@@ -50,6 +50,7 @@ export default function App() {
   const currentDay   = useStore((s) => s.currentDay);
   const setCurrentDay = useStore((s) => s.setCurrentDay);
   const setConfig    = useStore((s) => s.setConfig);
+  const setAreas     = useStore((s) => s.setAreas);
   const logout       = useStore((s) => s.logout);
 
   const [loading,     setLoading]     = useState(true);
@@ -61,12 +62,14 @@ export default function App() {
 
     async function init() {
       try {
-        const [dayRes, cfgRes] = await Promise.all([
+        const [dayRes, cfgRes, areasRes] = await Promise.all([
           api.get('/api/days/today'),
           api.get('/api/config'),
+          api.get('/api/areas'),
         ]);
         setCurrentDay(dayRes.data.data);
         setConfig(cfgRes.data.data);
+        setAreas(areasRes.data.data);
       } catch (err) {
         if (err.response?.status === 401) logout();
       } finally {
@@ -87,12 +90,14 @@ export default function App() {
     setOnboarding(false);
     setLoading(true);
     try {
-      const [dayRes, cfgRes] = await Promise.all([
+      const [dayRes, cfgRes, areasRes] = await Promise.all([
         api.get('/api/days/today'),
         api.get('/api/config'),
+        api.get('/api/areas'),
       ]);
       setCurrentDay(dayRes.data.data);
       setConfig(cfgRes.data.data);
+      setAreas(areasRes.data.data);
     } finally {
       setLoading(false);
     }

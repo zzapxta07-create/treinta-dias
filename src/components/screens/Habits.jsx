@@ -1,20 +1,10 @@
 import { useEffect, useState } from 'react';
-import { AREAS } from '../../data/areas';
+import { useAreas, useAreaMap } from '../../hooks/useAreas';
 import api from '../../api/index.js';
 import { DiamondOrnament } from '../ui/Ornaments';
 
-const AREA_COLORS = {
-  NEGOCIO:   '#3B82F6',
-  SEGUNDA:   '#A855F7',
-  ESTUDIO:   '#F59E0B',
-  EJERCICIO: '#10B981',
-  OTROS:     '#9490aa',
-};
-
-const AREA_OPTIONS = Object.entries(AREAS);
 const FREQ_OPTIONS = ['daily', 'weekly'];
 const FREQ_LABELS  = { daily: 'Diario', weekly: 'Semanal' };
-const EMPTY_FORM   = { name: '', area_id: 'NEGOCIO', frequency: 'daily' };
 
 const panelStyle = {
   background: 'linear-gradient(135deg, #17142a 0%, #110e1c 100%)',
@@ -69,10 +59,12 @@ function MiniHeatmap({ logs }) {
 }
 
 export default function Habits() {
+  const areas   = useAreas();
+  const areaMap = useAreaMap();
   const [habits,   setHabits]   = useState([]);
   const [loading,  setLoading]  = useState(true);
   const [showForm, setShowForm] = useState(false);
-  const [form,     setForm]     = useState(EMPTY_FORM);
+  const [form,     setForm]     = useState({ name: '', area_id: 'NEGOCIO', frequency: 'daily' });
   const [saving,   setSaving]   = useState(false);
   const [toggling, setToggling] = useState({});
 
@@ -93,7 +85,7 @@ export default function Habits() {
     setSaving(true);
     try {
       await api.post('/api/habits', form);
-      setForm(EMPTY_FORM);
+      setForm({ name: '', area_id: 'NEGOCIO', frequency: 'daily' });
       setShowForm(false);
       load();
     } finally {
@@ -120,9 +112,9 @@ export default function Habits() {
     load();
   }
 
-  const grouped = AREA_OPTIONS.reduce((acc, [id]) => {
-    const items = habits.filter((h) => h.area_id === id);
-    if (items.length > 0) acc[id] = items;
+  const grouped = areas.reduce((acc, a) => {
+    const items = habits.filter((h) => h.area_id === a.id);
+    if (items.length > 0) acc[a.id] = items;
     return acc;
   }, {});
 
@@ -171,8 +163,8 @@ export default function Habits() {
               onChange={(e) => setForm((f) => ({ ...f, area_id: e.target.value }))}
               style={{ ...inputStyle, flex: 1 }}
             >
-              {AREA_OPTIONS.map(([id, a]) => (
-                <option key={id} value={id}>{a.label}</option>
+              {areas.map(a => (
+                <option key={a.id} value={a.id}>{a.emoji} {a.label}</option>
               ))}
             </select>
             <select
@@ -213,13 +205,14 @@ export default function Habits() {
       ) : (
         <div className="flex flex-col gap-6">
           {Object.entries(grouped).map(([areaId, items]) => {
-            const color = AREA_COLORS[areaId] || AREA_COLORS.OTROS;
+            const area = areaMap[areaId];
+            const color = area?.color || '#9490aa';
             return (
               <div key={areaId}>
                 <div className="flex items-center gap-2 mb-3">
                   <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: color }} />
                   <p className="font-cinzel text-[9px] uppercase tracking-[0.25em]" style={{ color }}>
-                    {AREAS[areaId]?.label || areaId}
+                    {area?.emoji} {area?.label || areaId}
                   </p>
                   <div className="flex-1 h-px" style={{ backgroundColor: color + '30' }} />
                 </div>

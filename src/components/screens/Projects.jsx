@@ -1,17 +1,14 @@
 import { useEffect, useState } from 'react';
-import { AREAS } from '../../data/areas';
+import { useAreas, useAreaMap } from '../../hooks/useAreas';
 import api from '../../api/index.js';
 import { DiamondOrnament } from '../ui/Ornaments';
 
-const AREA_OPTIONS = Object.entries(AREAS).filter(([id]) => id !== 'OTROS');
-
-const AREA_COLORS = {
-  NEGOCIO:   { bg: 'rgba(96,165,250,0.12)',   border: '#60a5fa', text: '#60a5fa' },
-  SEGUNDA:   { bg: 'rgba(167,139,250,0.12)',  border: '#a78bfa', text: '#a78bfa' },
-  ESTUDIO:   { bg: 'rgba(251,191,36,0.12)',   border: '#fbbf24', text: '#fbbf24' },
-  EJERCICIO: { bg: 'rgba(52,211,153,0.12)',   border: '#34d399', text: '#34d399' },
-  OTROS:     { bg: 'rgba(148,144,170,0.10)',  border: '#9490aa', text: '#9490aa' },
-};
+function areaStyle(color) {
+  const r = parseInt(color.slice(1, 3), 16);
+  const g = parseInt(color.slice(3, 5), 16);
+  const b = parseInt(color.slice(5, 7), 16);
+  return { bg: `rgba(${r},${g},${b},0.12)`, border: color, text: color };
+}
 
 const panelStyle = {
   background: 'linear-gradient(135deg, #17142a 0%, #110e1c 100%)',
@@ -37,14 +34,14 @@ function daysUntil(dateStr) {
   return Math.ceil((new Date(dateStr) - new Date()) / 86400000);
 }
 
-const EMPTY_FORM = { name: '', area_id: 'NEGOCIO', type: 'percent', deadline: '' };
-
 export default function Projects() {
+  const areas   = useAreas();
+  const areaMap = useAreaMap();
   const [projects,   setProjects]   = useState([]);
   const [loading,    setLoading]    = useState(true);
   const [filterArea, setFilterArea] = useState('ALL');
   const [showForm,   setShowForm]   = useState(false);
-  const [form,       setForm]       = useState(EMPTY_FORM);
+  const [form,       setForm]       = useState({ name: '', area_id: 'NEGOCIO', type: 'percent', deadline: '' });
   const [saving,     setSaving]     = useState(false);
   const [progress,   setProgress]   = useState({});
 
@@ -139,8 +136,8 @@ export default function Projects() {
               onChange={(e) => setForm((f) => ({ ...f, area_id: e.target.value }))}
               style={{ ...inputStyle, flex: 1 }}
             >
-              {AREA_OPTIONS.map(([id, a]) => (
-                <option key={id} value={id}>{a.label}</option>
+              {areas.filter(a => a.id !== 'OTROS').map(a => (
+                <option key={a.id} value={a.id}>{a.emoji} {a.label}</option>
               ))}
             </select>
             <select
@@ -180,7 +177,7 @@ export default function Projects() {
 
       {/* Area filter */}
       <div className="flex gap-2 mb-5 flex-wrap">
-        {[['ALL', 'Todas'], ...AREA_OPTIONS.map(([id, a]) => [id, a.label.split(' ')[0]])].map(([id, label]) => (
+        {[{ id: 'ALL', label: 'Todas', emoji: '' }, ...areas].map(({ id, label, emoji }) => (
           <button
             key={id}
             onClick={() => setFilterArea(id)}
@@ -190,7 +187,7 @@ export default function Projects() {
               : { background: 'rgba(255,255,255,0.03)', color: '#4d4568', border: '1px solid #2c2740' }
             }
           >
-            {label}
+            {emoji ? emoji + ' ' : ''}{label.split(' ')[0]}
           </button>
         ))}
       </div>
@@ -210,7 +207,7 @@ export default function Projects() {
           {filtered.map((p) => {
             const days = daysUntil(p.deadline);
             const overdue = days !== null && days < 0;
-            const colors = AREA_COLORS[p.area_id] || AREA_COLORS.OTROS;
+            const colors = areaStyle(areaMap[p.area_id]?.color || '#6B7280');
             const prog = progress[p.id] ?? p.progress ?? 0;
 
             return (
@@ -239,7 +236,7 @@ export default function Projects() {
                       className="font-cinzel text-[8px] tracking-[0.08em] uppercase px-2 py-0.5 rounded"
                       style={{ backgroundColor: colors.bg, color: colors.text, border: `1px solid ${colors.border}30` }}
                     >
-                      {AREAS[p.area_id]?.label.split(' ')[0] || p.area_id}
+                      {areaMap[p.area_id]?.emoji} {areaMap[p.area_id]?.label.split(' ')[0] || p.area_id}
                     </span>
                     <button
                       onClick={() => handleDelete(p.id)}

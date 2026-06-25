@@ -1,12 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useStore } from '../../store/useStore';
-import { AREAS, MANDATORY_AREAS } from '../../data/areas';
+import { useAreas, useAreaMap } from '../../hooks/useAreas';
 import { timeToMinutes, minutesToTime, minutesToLabel } from '../../utils/dateUtils';
 import AreaBadge from '../ui/AreaBadge';
 import api from '../../api/index.js';
 import { DiamondOrnament } from '../ui/Ornaments';
 
-const AREA_MINS = { NEGOCIO: 300, SEGUNDA: 60, ESTUDIO: 180, EJERCICIO: 30 };
 
 const panelStyle = {
   background: 'linear-gradient(135deg, #17142a 0%, #110e1c 100%)',
@@ -44,6 +43,8 @@ export default function DayPlanner() {
   const currentDay    = useStore((s) => s.currentDay);
   const setCurrentDay = useStore((s) => s.setCurrentDay);
   const config        = useStore((s) => s.config);
+  const areas         = useAreas();
+  const areaMap       = useAreaMap();
 
   const [projects, setProjects] = useState([]);
   const [blocks,   setBlocks]   = useState(currentDay?.blocks || []);
@@ -55,13 +56,16 @@ export default function DayPlanner() {
   const [editingId, setEditingId] = useState(null);
   const [editForm, setEditForm] = useState({});
 
+  const mandatoryAreas = areas.filter(a => a.min_minutes > 0);
+  const areaHex = Object.fromEntries(areas.map(a => [a.id, a.color]));
+
   const areaMins = blocks.reduce((acc, b) => {
-    const area = b.area_id || b.area;
-    if (area && area !== 'OTROS' && acc[area] !== undefined) {
-      acc[area] += (b.end_minutes ?? b.endMinutes) - (b.start_minutes ?? b.startMinutes);
+    const areaId = b.area_id || b.area;
+    if (areaId && areaMap[areaId]?.min_minutes > 0) {
+      acc[areaId] = (acc[areaId] || 0) + ((b.end_minutes ?? b.endMinutes) - (b.start_minutes ?? b.startMinutes));
     }
     return acc;
-  }, { NEGOCIO: 0, SEGUNDA: 0, ESTUDIO: 0, EJERCICIO: 0 });
+  }, {});
 
   const isSpecial = currentDay?.is_special_day;
   const canActivateSpecial = config && !isSpecial &&
@@ -195,11 +199,9 @@ export default function DayPlanner() {
 
   async function handleConfirm() {
     if (!isSpecial) {
-      const warns = [];
-      if (areaMins.NEGOCIO   < 300) warns.push(`Negocio: faltan ${minutesToLabel(300 - areaMins.NEGOCIO)}`);
-      if (areaMins.SEGUNDA   <  60) warns.push(`Segunda: faltan ${minutesToLabel(60  - areaMins.SEGUNDA)}`);
-      if (areaMins.ESTUDIO   < 180) warns.push(`Estudio: faltan ${minutesToLabel(180 - areaMins.ESTUDIO)}`);
-      if (areaMins.EJERCICIO <  30) warns.push(`Ejercicio: faltan ${minutesToLabel(30 - areaMins.EJERCICIO)}`);
+      const warns = mandatoryAreas
+        .filter(a => (areaMins[a.id] || 0) < a.min_minutes)
+        .map(a => `${a.label}: faltan ${minutesToLabel(a.min_minutes - (areaMins[a.id] || 0))}`);
       if (warns.length > 0) { setWarnings(warns); return; }
     }
     setConfirming(true);
@@ -226,10 +228,6 @@ export default function DayPlanner() {
     return Math.max(0.5, ((end - start) / TIMELINE_RANGE) * 100);
   }
 
-  const AREA_HEX = {
-    NEGOCIO: '#3B82F6', SEGUNDA: '#A855F7', ESTUDIO: '#F59E0B',
-    EJERCICIO: '#10B981', OTROS: '#9490aa',
-  };
 
   const fieldStyle = (focused) => ({
     ...inputStyle,
@@ -253,16 +251,16 @@ export default function DayPlanner() {
       <div className="p-4 mb-4" style={panelStyle}>
         <SectionTitle>{isSpecial ? 'Día Especial — mínimos libres' : 'Mínimos Obligatorios'}</SectionTitle>
         <div className="grid grid-cols-2 gap-x-6 gap-y-2">
-          {MANDATORY_AREAS.map((id) => {
-            const done = areaMins[id] || 0;
-            const ok   = isSpecial || done >= AREA_MINS[id];
+          {mandatoryAreas.map((a) => {
+            const done = areaMins[a.id] || 0;
+            const ok   = isSpecial || done >= a.min_minutes;
             return (
-              <div key={id} className="flex justify-between items-center">
+              <div key={a.id} className="flex justify-between items-center">
                 <span className={`text-xs ${ok ? 'text-[#d4a956]' : 'text-[#4d4568]'}`}>
-                  {ok ? '✓' : '◦'} {AREAS[id].label.split(' ')[0]}
+                  {ok ? '✓' : '◦'} {a.label.split(' ')[0]}
                 </span>
                 <span className={`font-mono text-xs ${ok ? 'text-[#d4a956]' : 'text-[#9b1f30]'}`}>
-                  {minutesToLabel(done)}/{minutesToLabel(AREA_MINS[id])}
+                  {minutesToLabel(done)}/{minutesToLabel(a.min_minutes)}
                 </span>
               </div>
             );
@@ -305,7 +303,7 @@ export default function DayPlanner() {
                     backgroundColor: AREA_HEX[area] + '40',
                     borderLeft: `2px solid ${AREA_HEX[area]}`,
                   }}
-                  title={`${minutesToTime(s)}–${minutesToTime(e)} · ${AREAS[area]?.label}`}
+                  title={`${minutesToTime(s)}–${minutesToTime(e)} · ${areaMap[area]?.label}`}
                 />
               );
             })}
@@ -438,8 +436,8 @@ export default function DayPlanner() {
                         onChange={(e) => setEditForm((f) => ({ ...f, area: e.target.value, projectId: '' }))}
                         style={inputStyle}
                       >
-                        {Object.values(AREAS).map((a) => (
-                          <option key={a.id} value={a.id}>{a.label}</option>
+                        {areas.map((a) => (
+                          <option key={a.id} value={a.id}>{a.emoji} {a.label}</option>
                         ))}
                       </select>
                     </div>
