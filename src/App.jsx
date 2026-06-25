@@ -62,14 +62,14 @@ export default function App() {
 
     async function init() {
       try {
-        const [dayRes, cfgRes, areasRes] = await Promise.all([
+        const [dayRes, cfgRes] = await Promise.all([
           api.get('/api/days/today'),
           api.get('/api/config'),
-          api.get('/api/areas'),
         ]);
         setCurrentDay(dayRes.data.data);
         setConfig(cfgRes.data.data);
-        setAreas(areasRes.data.data);
+        // areas is non-critical — load in background, fall back to defaults on error
+        api.get('/api/areas').then(r => setAreas(r.data.data)).catch(() => {});
       } catch (err) {
         if (err.response?.status === 401) logout();
       } finally {
@@ -90,14 +90,13 @@ export default function App() {
     setOnboarding(false);
     setLoading(true);
     try {
-      const [dayRes, cfgRes, areasRes] = await Promise.all([
+      const [dayRes, cfgRes] = await Promise.all([
         api.get('/api/days/today'),
         api.get('/api/config'),
-        api.get('/api/areas'),
       ]);
       setCurrentDay(dayRes.data.data);
       setConfig(cfgRes.data.data);
-      setAreas(areasRes.data.data);
+      api.get('/api/areas').then(r => setAreas(r.data.data)).catch(() => {});
     } finally {
       setLoading(false);
     }
