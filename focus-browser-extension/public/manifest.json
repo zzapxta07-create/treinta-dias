@@ -17,6 +17,7 @@
     "storage",
     "tabs",
     "alarms",
+    "webNavigation",
     "declarativeNetRequest",
     "declarativeNetRequestWithHostAccess"
   ],

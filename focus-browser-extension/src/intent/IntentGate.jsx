@@ -16,8 +16,6 @@ export default function IntentGate({ url, onApproved, onCancel }) {
 
   useEffect(() => { textareaRef.current?.focus(); }, []);
 
-  function handlePaste(e)        { e.preventDefault(); }
-  function handleContextMenu(e)  { e.preventDefault(); }
   function handleDrop(e)         { e.preventDefault(); }
 
   function handleChange(e) {
@@ -73,8 +71,6 @@ export default function IntentGate({ url, onApproved, onCancel }) {
         className="fb-intent-textarea"
         value={text}
         onChange={handleChange}
-        onPaste={handlePaste}
-        onContextMenu={handleContextMenu}
         onDrop={handleDrop}
         onKeyDown={handleKeyDown}
         placeholder={T.intent.placeholder}

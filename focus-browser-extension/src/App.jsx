@@ -5,11 +5,13 @@ import LoadingScreen from './intent/LoadingScreen.jsx';
 import { t, initLanguage, getLanguage } from './i18n/index.js';
 import { addHistoryEntry } from './storage/historyStorage.js';
 import { recordOpen, recordCancelled } from './storage/statsStorage.js';
+import { isDistractorUrl } from './terminal/commandRegistry.js';
 import './styles/terminal.css';
 
 // Allow use both as newtab and as popup (popup passes ?popup=1)
-const params      = new URLSearchParams(window.location.search);
-const IS_BLOCKED  = params.get('blocked') === '1';
+const params       = new URLSearchParams(window.location.search);
+const IS_BLOCKED   = params.get('blocked') === '1';
+const INCOMING_URL = params.get('url') ? decodeURIComponent(params.get('url')) : null;
 
 export default function App() {
   const [phase,       setPhase]       = useState('loading-lang'); // loading-lang | terminal | intent | loading
@@ -17,7 +19,16 @@ export default function App() {
   const [pendingMeta, setPendingMeta] = useState(null);
 
   useEffect(() => {
-    initLanguage().then(() => setPhase(IS_BLOCKED ? 'blocked' : 'terminal'));
+    initLanguage().then(() => {
+      if (IS_BLOCKED) { setPhase('blocked'); return; }
+      if (INCOMING_URL) {
+        setPendingUrl(INCOMING_URL);
+        setPendingMeta({ command: 'link', type: 'visit', isDistractor: isDistractorUrl(INCOMING_URL) });
+        setPhase('intent');
+        return;
+      }
+      setPhase('terminal');
+    });
   }, []);
 
   // Called from Terminal when a URL should be opened
