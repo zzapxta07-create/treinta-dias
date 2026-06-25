@@ -14,6 +14,9 @@ const ALLOWED_DOMAINS = [
   'reddit.com', 'redd.it', 'redditstatic.com', 'redditmedia.com',
 ];
 
+// Search engines and utility sites — never gated
+const SEARCH_ENGINE_RE = /^(www\.)?(google\.[a-z]{2,6}(\.[a-z]{2})?|bing\.com|duckduckgo\.com|search\.yahoo\.com|ecosia\.org|brave\.com)$/;
+
 const RULE_BASE_ID = 200;
 
 function buildRules(distractors) {
@@ -151,8 +154,10 @@ chrome.tabs.onCreated.addListener(async (tab) => {
   const url = tab.pendingUrl || tab.url || '';
   if (!url.startsWith('http')) return;
 
-  // Whitelisted domains open freely
+  // Whitelisted domains and search engines open freely
   if (isAllowedDomain(url)) return;
+  try { if (SEARCH_ENGINE_RE.test(new URL(url).hostname)) return; } catch {}
+
 
   // Same-domain links open freely (e.g. YouTube → YouTube, GitHub → GitHub)
   if (tab.openerTabId) {
