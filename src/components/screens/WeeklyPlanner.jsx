@@ -1,15 +1,10 @@
 import { useState, useEffect } from 'react';
-import { AREAS } from '../../data/areas';
+import { useAreas, useAreaMap } from '../../hooks/useAreas';
 import { minutesToTime, timeToMinutes } from '../../utils/dateUtils';
 import api from '../../api/index.js';
 import { DiamondOrnament } from '../ui/Ornaments';
 
 const DAY_ABBR = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
-
-const AREA_HEX = {
-  NEGOCIO: '#3B82F6', SEGUNDA: '#A855F7', ESTUDIO: '#F59E0B',
-  EJERCICIO: '#10B981', OTROS: '#9490aa', PERSONAL: '#EC4899',
-};
 
 function getMondayOf(date) {
   const d = new Date(date);
@@ -40,10 +35,10 @@ const inputStyle = {
   fontFamily: "'Crimson Text', serif",
 };
 
-function BlockForm({ onSave, onCancel, initialValues = {} }) {
+function BlockForm({ onSave, onCancel, initialValues = {}, areas }) {
   const [start,  setStart]  = useState(initialValues.start || '07:00');
   const [end,    setEnd]    = useState(initialValues.end   || '08:00');
-  const [area,   setArea]   = useState(initialValues.area  || 'NEGOCIO');
+  const [area,   setArea]   = useState(initialValues.area  || (areas?.[0]?.id || 'NEGOCIO'));
   const [notes,  setNotes]  = useState(initialValues.notes || '');
   const [saving, setSaving] = useState(false);
   const [error,  setError]  = useState('');
@@ -81,7 +76,7 @@ function BlockForm({ onSave, onCancel, initialValues = {} }) {
         <label className="font-cinzel text-[8px] text-[#4d4568] block mb-1 tracking-widest uppercase">Área</label>
         <select value={area} onChange={e => setArea(e.target.value)}
           style={{ ...inputStyle, width: '100%', padding: '6px 8px' }}>
-          {Object.values(AREAS).map(a => <option key={a.id} value={a.id}>{a.label}</option>)}
+          {(areas || []).map(a => <option key={a.id} value={a.id}>{a.emoji} {a.label}</option>)}
         </select>
       </div>
       <div className="mb-2">
@@ -110,7 +105,7 @@ function BlockForm({ onSave, onCancel, initialValues = {} }) {
   );
 }
 
-function DayColumn({ dayIndex, dayDate, dayId, dayBlocks, dateKey, onReload, isToday, isPast }) {
+function DayColumn({ dayIndex, dayDate, dayId, dayBlocks, dateKey, onReload, isToday, isPast, areas, areaMap }) {
   const [addingBlock, setAddingBlock] = useState(false);
   const [editingId,   setEditingId]   = useState(null);
   const sorted = [...(dayBlocks || [])].sort((a, b) => a.start_minutes - b.start_minutes);
@@ -162,19 +157,20 @@ function DayColumn({ dayIndex, dayDate, dayId, dayBlocks, dateKey, onReload, isT
                 initialValues={{ start: minutesToTime(b.start_minutes), end: minutesToTime(b.end_minutes), area: b.area_id, notes: b.notes || '' }}
                 onSave={(v) => handleEdit(b.id, v)}
                 onCancel={() => setEditingId(null)}
+                areas={areas}
               />
             ) : (
               <div className="rounded p-1.5 group"
                 style={{
                   background: 'linear-gradient(135deg, #17142a 0%, #110e1c 100%)',
                   border: '1px solid #2c2740',
-                  borderLeft: `2px solid ${AREA_HEX[b.area_id]}`,
+                  borderLeft: `2px solid ${areaMap[b.area_id]?.color || '#9490aa'}`,
                 }}>
                 <p className="font-mono text-[10px] text-[#f0e6d0] leading-tight">
                   {minutesToTime(b.start_minutes)}–{minutesToTime(b.end_minutes)}
                 </p>
                 <p className="font-cinzel text-[8px] uppercase tracking-wide truncate"
-                  style={{ color: AREA_HEX[b.area_id] }}>{AREAS[b.area_id]?.label?.split(' ')[0]}</p>
+                  style={{ color: areaMap[b.area_id]?.color || '#9490aa' }}>{areaMap[b.area_id]?.label?.split(' ')[0]}</p>
                 {b.notes && <p className="text-[9px] truncate italic mt-0.5" style={{ color: '#4d4568' }}>{b.notes}</p>}
                 {!isPast && (
                   <div className="flex gap-1 mt-1 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -197,7 +193,7 @@ function DayColumn({ dayIndex, dayDate, dayId, dayBlocks, dateKey, onReload, isT
       {!isPast && (
         <div className="px-1 mt-1">
           {addingBlock ? (
-            <BlockForm onSave={handleAdd} onCancel={() => setAddingBlock(false)} />
+            <BlockForm onSave={handleAdd} onCancel={() => setAddingBlock(false)} areas={areas} />
           ) : (
             <button onClick={() => setAddingBlock(true)}
               className="w-full font-cinzel text-[8px] tracking-widest uppercase py-1 rounded transition-colors"
@@ -214,6 +210,9 @@ function DayColumn({ dayIndex, dayDate, dayId, dayBlocks, dateKey, onReload, isT
 }
 
 export default function WeeklyPlanner() {
+  const areas   = useAreas();
+  const areaMap = useAreaMap();
+
   const [weekOffset, setWeekOffset] = useState(0);
   const [weekDays,   setWeekDays]   = useState([]);
   const [notes,      setNotes]      = useState('');
@@ -309,6 +308,8 @@ export default function WeeklyPlanner() {
               onReload={loadWeek}
               isToday={dateKey === todayKey}
               isPast={dateKey < todayKey}
+              areas={areas}
+              areaMap={areaMap}
             />
           );
         })}
@@ -353,11 +354,11 @@ export default function WeeklyPlanner() {
       </div>
 
       <div className="mt-4 flex flex-wrap gap-3">
-        {Object.entries(AREA_HEX).map(([id, color]) => (
-          <div key={id} className="flex items-center gap-1">
-            <div className="w-2 h-2 rounded-full" style={{ backgroundColor: color }} />
+        {areas.map(a => (
+          <div key={a.id} className="flex items-center gap-1">
+            <div className="w-2 h-2 rounded-full" style={{ backgroundColor: a.color }} />
             <span className="font-cinzel text-[8px] uppercase tracking-wide" style={{ color: '#4d4568' }}>
-              {AREAS[id]?.label?.split(' ')[0]}
+              {a.emoji} {a.label.split(' ')[0]}
             </span>
           </div>
         ))}
