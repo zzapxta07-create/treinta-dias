@@ -17,6 +17,14 @@ const RULE_BASE_ID = 200;
 // Session rules share the same ID space as dynamic rules; use a high offset
 const SESSION_RULE_OFFSET = 100000;
 
+// Module-level cache so isDistractorUrl() is synchronous (avoids await in time-sensitive handlers)
+let cachedDistractors = DEFAULT_DISTRACTORS;
+chrome.storage.local.get('fb_distractors').then(d => {
+  if (d.fb_distractors) cachedDistractors = d.fb_distractors;
+}).catch(() => {});
+
+// ── Rule helpers ──────────────────────────────────────────────────────────────
+
 function buildRules(distractors) {
   return distractors.map((domain, i) => ({
     id: RULE_BASE_ID + i,
@@ -33,6 +41,7 @@ function buildRules(distractors) {
 }
 
 async function setupDistractorRules(distractors = DEFAULT_DISTRACTORS) {
+  cachedDistractors = distractors;
   try {
     const existing = await chrome.declarativeNetRequest.getDynamicRules();
     const existingIds = existing.map(r => r.id);
@@ -42,18 +51,6 @@ async function setupDistractorRules(distractors = DEFAULT_DISTRACTORS) {
     });
   } catch (e) {
     console.error('[FocusBrowser] Failed to set rules:', e);
-  }
-}
-
-function getRuleForUrl(rules, url) {
-  try {
-    const host = new URL(url).hostname.replace(/^www\./, '');
-    return rules.find(r => {
-      const domain = r.condition.urlFilter.replace('||', '');
-      return host === domain || host.endsWith('.' + domain);
-    });
-  } catch {
-    return null;
   }
 }
 
@@ -68,10 +65,27 @@ function isAllowedDomain(url) {
   return ALLOWED_DOMAINS.some(d => host === d || host.endsWith('.' + d));
 }
 
+// Returns the matching distractor domain string, or null. Synchronous — uses cache.
+function matchDistractor(url) {
+  const host = getBaseDomain(url);
+  return cachedDistractors.find(d => host === d || host.endsWith('.' + d)) || null;
+}
+
+function getRuleForUrl(rules, url) {
+  try {
+    const host = new URL(url).hostname.replace(/^www\./, '');
+    return rules.find(r => {
+      const domain = r.condition.urlFilter.replace('||', '');
+      return host === domain || host.endsWith('.' + domain);
+    });
+  } catch {
+    return null;
+  }
+}
+
 // ── Per-tab session allow-rules ───────────────────────────────────────────────
-// Session rules have priority 100 (> blocking rules at priority 1).
-// They survive SW sleep/wake but are cleared on browser restart.
-// chrome.storage.session mirrors the state for cleanup on navigation/tab close.
+// Priority 100 beats DNR blocking rules (priority 1).
+// Scoped to a specific tabId so only that tab is exempted.
 
 async function addSessionAllowRule(tabId, domain) {
   const ruleId = SESSION_RULE_OFFSET + tabId;
@@ -139,11 +153,8 @@ async function navigateToUrl(url, isDistractor, fromTabId) {
   if (!targetTabId) return;
 
   if (isDistractor) {
-    const rules = await chrome.declarativeNetRequest.getDynamicRules();
-    const matchingRule = getRuleForUrl(rules, url);
-    if (matchingRule) {
-      const domain = matchingRule.condition.urlFilter.replace('||', '');
-      // Session rule allows this tab to navigate + refresh freely on this domain
+    const domain = matchDistractor(url);
+    if (domain) {
       await addSessionAllowRule(targetTabId, domain);
     }
   }
@@ -157,7 +168,13 @@ async function getActiveTabId() {
 }
 
 // ── Intent gate for new tabs ─────────────────────────────────────────────────
-// tabs.onCreated fires before declarativeNetRequest, so we can redirect first.
+// tabs.onCreated fires before declarativeNetRequest processes the navigation,
+// giving us a window to redirect or set a session rule.
+//
+// CRITICAL: any chrome API await() in this handler can lose the race against DNR.
+// For distractor links opened from another tab, we immediately redirect to
+// about:blank (no await — enqueued synchronously) to cancel the original
+// navigation, then async-add the session rule, then re-navigate.
 
 chrome.tabs.onCreated.addListener(async (tab) => {
   const url = tab.pendingUrl || tab.url || '';
@@ -166,27 +183,27 @@ chrome.tabs.onCreated.addListener(async (tab) => {
   try { if (SEARCH_ENGINE_RE.test(new URL(url).hostname)) return; } catch {}
 
   if (tab.openerTabId) {
-    // Link opened from another tab: check if it's a distractor
-    const rules = await chrome.declarativeNetRequest.getDynamicRules();
-    const matchingRule = getRuleForUrl(rules, url);
-    if (matchingRule) {
-      // Allow via session rule so declarativeNetRequest doesn't block it
-      const domain = matchingRule.condition.urlFilter.replace('||', '');
-      await addSessionAllowRule(tab.id, domain);
+    const distractor = matchDistractor(url); // synchronous — no await
+    if (distractor) {
+      // Synchronously cancel the original navigation before DNR intercepts it,
+      // then add the session allow-rule and re-navigate.
+      chrome.tabs.update(tab.id, { url: 'about:blank' }); // no await — beats DNR
+      await addSessionAllowRule(tab.id, distractor);
+      chrome.tabs.update(tab.id, { url });                 // session rule is now active
     }
     return; // skip intent gate for any link click
   }
 
-  // Direct navigation (no opener) → show intent gate
-  const newtabUrl = chrome.runtime.getURL(`newtab.html?url=${encodeURIComponent(url)}`);
-  chrome.tabs.update(tab.id, { url: newtabUrl });
+  // Direct navigation (typed URL, Ctrl+T) — show intent gate
+  chrome.tabs.update(tab.id, { url: chrome.runtime.getURL(`newtab.html?url=${encodeURIComponent(url)}`) });
 });
 
 // ── Session rule cleanup ─────────────────────────────────────────────────────
 
-// Remove session rule when tab navigates away from the allowed distractor domain
+// Revoke session allow-rule when the tab navigates away from the allowed domain.
+// Refreshes don't change the URL, so changeInfo.url is undefined — rule is kept.
 chrome.tabs.onUpdated.addListener(async (tabId, changeInfo) => {
-  if (!changeInfo.url) return; // refresh doesn't change URL — keep rule intact
+  if (!changeInfo.url) return;
   const allowedDomain = await getTabAllowedDomain(tabId);
   if (!allowedDomain) return;
 
@@ -197,7 +214,7 @@ chrome.tabs.onUpdated.addListener(async (tabId, changeInfo) => {
   }
 });
 
-// Remove session rule when tab closes
+// Revoke session allow-rule when the tab is closed.
 chrome.tabs.onRemoved.addListener(async (tabId) => {
   const allowedDomain = await getTabAllowedDomain(tabId);
   if (allowedDomain) await removeSessionAllowRule(tabId);
