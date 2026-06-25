@@ -136,17 +136,31 @@ async function getActiveTabId() {
 // pendingUrl is populated when a link is Ctrl+Clicked or opened via target="_blank".
 // Empty-URL tabs (Ctrl+T, typed URLs) have pendingUrl='' so they're skipped.
 
-function isAllowedDomain(url) {
+function getBaseDomain(url) {
   try {
-    const host = new URL(url).hostname.replace(/^www\./, '');
-    return ALLOWED_DOMAINS.some(d => host === d || host.endsWith('.' + d));
-  } catch { return false; }
+    return new URL(url).hostname.replace(/^www\./, '');
+  } catch { return ''; }
 }
 
-chrome.tabs.onCreated.addListener((tab) => {
+function isAllowedDomain(url) {
+  const host = getBaseDomain(url);
+  return ALLOWED_DOMAINS.some(d => host === d || host.endsWith('.' + d));
+}
+
+chrome.tabs.onCreated.addListener(async (tab) => {
   const url = tab.pendingUrl || tab.url || '';
   if (!url.startsWith('http')) return;
+
+  // Whitelisted domains open freely
   if (isAllowedDomain(url)) return;
+
+  // Same-domain links open freely (e.g. YouTube → YouTube, GitHub → GitHub)
+  if (tab.openerTabId) {
+    try {
+      const opener = await chrome.tabs.get(tab.openerTabId);
+      if (getBaseDomain(opener.url) === getBaseDomain(url)) return;
+    } catch {}
+  }
 
   const newtabUrl = chrome.runtime.getURL(`newtab.html?url=${encodeURIComponent(url)}`);
   chrome.tabs.update(tab.id, { url: newtabUrl });
