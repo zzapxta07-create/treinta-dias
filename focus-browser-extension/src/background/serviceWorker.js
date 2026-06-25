@@ -9,6 +9,11 @@ const DEFAULT_DISTRACTORS = [
   'instagram.com', 'tiktok.com', 'facebook.com', 'netflix.com',
 ];
 
+// Domains that bypass the intent gate entirely (open directly like normal browsing)
+const ALLOWED_DOMAINS = [
+  'reddit.com', 'redd.it', 'redditstatic.com', 'redditmedia.com',
+];
+
 const RULE_BASE_ID = 200;
 
 function buildRules(distractors) {
@@ -131,9 +136,17 @@ async function getActiveTabId() {
 // pendingUrl is populated when a link is Ctrl+Clicked or opened via target="_blank".
 // Empty-URL tabs (Ctrl+T, typed URLs) have pendingUrl='' so they're skipped.
 
+function isAllowedDomain(url) {
+  try {
+    const host = new URL(url).hostname.replace(/^www\./, '');
+    return ALLOWED_DOMAINS.some(d => host === d || host.endsWith('.' + d));
+  } catch { return false; }
+}
+
 chrome.tabs.onCreated.addListener((tab) => {
   const url = tab.pendingUrl || tab.url || '';
   if (!url.startsWith('http')) return;
+  if (isAllowedDomain(url)) return;
 
   const newtabUrl = chrome.runtime.getURL(`newtab.html?url=${encodeURIComponent(url)}`);
   chrome.tabs.update(tab.id, { url: newtabUrl });
