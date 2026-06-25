@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useStore } from '../../store/useStore';
 import { GreatHelm } from './Ornaments';
 
@@ -25,6 +26,9 @@ function IconNotes() {
 function IconLogout() {
   return <svg width="15" height="15" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>;
 }
+function IconReset() {
+  return <svg width="15" height="15" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.5"/></svg>;
+}
 
 const NAV_ITEMS = [
   { key: null,       label: 'Tablero',   Icon: IconHome },
@@ -36,10 +40,18 @@ const NAV_ITEMS = [
   { key: 'notes',    label: 'Notas',     Icon: IconNotes },
 ];
 
-export default function Sidebar({ navScreen, setNavScreen }) {
+export default function Sidebar({ navScreen, setNavScreen, onReset }) {
   const user       = useStore((s) => s.user);
   const logout     = useStore((s) => s.logout);
   const currentDay = useStore((s) => s.currentDay);
+  const [confirm,  setConfirm]  = useState(false);
+  const [resetting, setResetting] = useState(false);
+
+  async function handleReset() {
+    setResetting(true);
+    try { await onReset?.(); }
+    finally { setResetting(false); setConfirm(false); }
+  }
 
   return (
     <aside className="hidden md:flex flex-col fixed left-0 top-0 h-full w-60 z-40"
@@ -117,16 +129,67 @@ export default function Sidebar({ navScreen, setNavScreen }) {
         </div>
       )}
 
-      {/* Logout */}
-      <div className="px-3 pb-4" style={{ borderTop: '1px solid #2c2740', paddingTop: '12px' }}>
+      {/* Reset + Logout */}
+      <div className="px-3 pb-4 flex flex-col gap-1" style={{ borderTop: '1px solid #2c2740', paddingTop: '12px' }}>
+        <button
+          onClick={() => setConfirm(true)}
+          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors border border-transparent"
+          style={{ color: '#4d4568' }}
+          onMouseOver={e => { e.currentTarget.style.color = '#d4a956'; e.currentTarget.style.borderColor = 'rgba(212,169,86,0.2)'; e.currentTarget.style.background = 'rgba(212,169,86,0.04)'; }}
+          onMouseOut={e => { e.currentTarget.style.color = '#4d4568'; e.currentTarget.style.borderColor = 'transparent'; e.currentTarget.style.background = 'transparent'; }}
+        >
+          <IconReset />
+          <span className="font-cinzel tracking-[0.06em] text-[11px]">Reiniciar desde cero</span>
+        </button>
         <button
           onClick={logout}
-          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-[#4d4568] hover:text-[#9b1f30] transition-colors border border-transparent hover:border-[#9b1f30]/20 hover:bg-[#9b1f30]/05"
+          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-[#4d4568] hover:text-[#9b1f30] transition-colors border border-transparent hover:border-[#9b1f30]/20"
         >
           <IconLogout />
           <span className="font-cinzel tracking-[0.06em] text-[11px]">Salir</span>
         </button>
       </div>
+
+      {/* Confirm reset modal */}
+      {confirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center px-4"
+          style={{ background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(4px)' }}>
+          <div className="w-full max-w-sm rounded-2xl p-6"
+            style={{ background: 'linear-gradient(135deg, #1a0e14 0%, #110e1c 100%)', border: '1px solid rgba(155,31,48,0.4)' }}>
+            <div className="text-center mb-5">
+              <div className="inline-flex items-center justify-center w-12 h-12 rounded-full mb-3"
+                style={{ border: '1px solid rgba(155,31,48,0.4)', background: 'rgba(155,31,48,0.08)' }}>
+                <span style={{ color: '#9b1f30', fontSize: '20px' }}>⚠</span>
+              </div>
+              <h3 className="font-cinzel text-lg font-bold mb-2" style={{ color: '#f0e6d0' }}>¿Reiniciar todo?</h3>
+              <p className="text-sm leading-relaxed" style={{ color: '#9490aa' }}>
+                Esto eliminará permanentemente todos tus días, bloques, evidencias, proyectos y hábitos.
+                Tu cuenta permanecerá activa.
+              </p>
+            </div>
+            <div className="flex flex-col gap-2">
+              <button
+                onClick={handleReset}
+                disabled={resetting}
+                className="w-full py-3 rounded-lg font-cinzel text-[11px] tracking-[0.15em] uppercase font-bold transition-colors disabled:opacity-30"
+                style={{ background: '#9b1f30', color: '#f0e6d0' }}
+              >
+                {resetting ? 'Eliminando...' : 'Sí, borrar todo y empezar de cero'}
+              </button>
+              <button
+                onClick={() => setConfirm(false)}
+                disabled={resetting}
+                className="w-full py-3 rounded-lg font-cinzel text-[11px] tracking-[0.1em] uppercase transition-colors disabled:opacity-30"
+                style={{ border: '1px solid #2c2740', color: '#4d4568', background: 'transparent' }}
+                onMouseOver={e => { e.currentTarget.style.color = '#9490aa'; }}
+                onMouseOut={e => { e.currentTarget.style.color = '#4d4568'; }}
+              >
+                Cancelar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Bottom subtle accent */}
       <div className="h-px w-full" style={{ background: 'linear-gradient(90deg, transparent, #2c2740, transparent)' }} />

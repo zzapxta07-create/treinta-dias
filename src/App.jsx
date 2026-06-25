@@ -5,6 +5,7 @@ import api from './api/index.js';
 import Login         from './components/screens/Login';
 import Sidebar       from './components/ui/Sidebar';
 import BottomNav     from './components/ui/BottomNav';
+import Onboarding    from './components/screens/Onboarding';
 
 import DayLost       from './components/screens/DayLost';
 import YesterdaySummary from './components/screens/YesterdaySummary';
@@ -32,10 +33,10 @@ function Spinner() {
   );
 }
 
-function AppShell({ navScreen, setNavScreen, children }) {
+function AppShell({ navScreen, setNavScreen, onReset, children }) {
   return (
     <div className="flex min-h-screen bg-stone">
-      <Sidebar navScreen={navScreen} setNavScreen={setNavScreen} />
+      <Sidebar navScreen={navScreen} setNavScreen={setNavScreen} onReset={onReset} />
       <main className="flex-1 md:ml-60 pb-20 md:pb-0 overflow-auto min-h-screen">
         {children}
       </main>
@@ -51,8 +52,9 @@ export default function App() {
   const setConfig    = useStore((s) => s.setConfig);
   const logout       = useStore((s) => s.logout);
 
-  const [loading,   setLoading]   = useState(true);
-  const [navScreen, setNavScreen] = useState(null);
+  const [loading,     setLoading]     = useState(true);
+  const [navScreen,   setNavScreen]   = useState(null);
+  const [onboarding,  setOnboarding]  = useState(false);
 
   useEffect(() => {
     if (!token) { setLoading(false); return; }
@@ -74,7 +76,30 @@ export default function App() {
     init();
   }, [token]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  async function handleReset() {
+    await api.post('/api/reset');
+    setCurrentDay(null);
+    setOnboarding(true);
+    setNavScreen(null);
+  }
+
+  async function handleOnboardingComplete() {
+    setOnboarding(false);
+    setLoading(true);
+    try {
+      const [dayRes, cfgRes] = await Promise.all([
+        api.get('/api/days/today'),
+        api.get('/api/config'),
+      ]);
+      setCurrentDay(dayRes.data.data);
+      setConfig(cfgRes.data.data);
+    } finally {
+      setLoading(false);
+    }
+  }
+
   if (!token) return <Login />;
+  if (onboarding) return <Onboarding onComplete={handleOnboardingComplete} />;
   if (loading || !currentDay) return <Spinner />;
 
   const phase = currentDay.phase;
@@ -89,7 +114,7 @@ export default function App() {
   };
   if (navScreen && NAV_SCREENS[navScreen]) {
     return (
-      <AppShell navScreen={navScreen} setNavScreen={setNavScreen}>
+      <AppShell navScreen={navScreen} setNavScreen={setNavScreen} onReset={handleReset}>
         {NAV_SCREENS[navScreen]}
       </AppShell>
     );
@@ -113,7 +138,7 @@ export default function App() {
   };
 
   return (
-    <AppShell navScreen={navScreen} setNavScreen={setNavScreen}>
+    <AppShell navScreen={navScreen} setNavScreen={setNavScreen} onReset={handleReset}>
       {SCREENS[phase] || <Spinner />}
     </AppShell>
   );
