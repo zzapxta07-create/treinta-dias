@@ -5,7 +5,7 @@
 //   3. Reset rules after navigation completes
 
 const DEFAULT_DISTRACTORS = [
-  'reddit.com', 'twitter.com', 'x.com',
+  'twitter.com', 'x.com',
   'instagram.com', 'tiktok.com', 'facebook.com', 'netflix.com',
 ];
 
