@@ -200,15 +200,16 @@ chrome.tabs.onCreated.addListener(async (tab) => {
 
 // ── Session rule cleanup ─────────────────────────────────────────────────────
 
-// Revoke session allow-rule when the tab navigates away from the allowed domain.
-// Refreshes don't change the URL, so changeInfo.url is undefined — rule is kept.
-chrome.tabs.onUpdated.addListener(async (tabId, changeInfo) => {
-  if (!changeInfo.url) return;
+// Revoke session allow-rule only when navigation is fully complete.
+// Using status='complete' + tab.url (final URL) avoids false-positive removal
+// during redirect chains where intermediate URLs may not match the allowed domain.
+chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
+  if (changeInfo.status !== 'complete') return;
   const allowedDomain = await getTabAllowedDomain(tabId);
   if (!allowedDomain) return;
 
-  const newHost = getBaseDomain(changeInfo.url);
-  const stillOnDomain = newHost === allowedDomain || newHost.endsWith('.' + allowedDomain);
+  const finalHost = getBaseDomain(tab.url || '');
+  const stillOnDomain = finalHost === allowedDomain || finalHost.endsWith('.' + allowedDomain);
   if (!stillOnDomain) {
     await removeSessionAllowRule(tabId);
   }
