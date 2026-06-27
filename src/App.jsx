@@ -21,6 +21,7 @@ import Habits        from './components/screens/Habits';
 import WeeklyPlanner from './components/screens/WeeklyPlanner';
 import Notes         from './components/screens/Notes';
 import Tasks         from './components/screens/Tasks';
+import Config        from './components/screens/Config';
 
 function Spinner() {
   return (
@@ -82,6 +83,7 @@ export default function App() {
   async function handleReset() {
     await api.post('/api/reset');
     setCurrentDay(null);
+    setAreas(null);
     setOnboarding(true);
     setNavScreen(null);
   }
@@ -115,6 +117,7 @@ export default function App() {
     weekly:   <WeeklyPlanner />,
     notes:    <Notes />,
     tasks:    <Tasks />,
+    config:   <Config />,
   };
   if (navScreen && NAV_SCREENS[navScreen]) {
     return (

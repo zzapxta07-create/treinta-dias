@@ -558,7 +558,7 @@ export default function DayPlanner() {
       )}
 
       {/* Confirm button */}
-      <div className="fixed bottom-0 left-0 right-0 md:left-60 p-4 border-t border-[#2c2740]"
+      <div className="fixed bottom-16 md:bottom-0 left-0 right-0 md:left-60 p-4 border-t border-[#2c2740]"
         style={{ background: 'rgba(9,8,14,0.97)', backdropFilter: 'blur(12px)' }}>
         <button
           onClick={handleConfirm}
