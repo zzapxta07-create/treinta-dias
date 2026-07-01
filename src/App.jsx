@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useStore } from './store/useStore';
 import api from './api/index.js';
 
@@ -24,11 +24,21 @@ import Tasks         from './components/screens/Tasks';
 import Config        from './components/screens/Config';
 
 function Spinner() {
+  const [slow, setSlow] = useState(false);
+  useEffect(() => {
+    const t = setTimeout(() => setSlow(true), 6000);
+    return () => clearTimeout(t);
+  }, []);
   return (
-    <div className="min-h-screen bg-stone flex items-center justify-center">
+    <div className="min-h-screen flex items-center justify-center" style={{ background: '#09080e' }}>
       <div className="text-center">
-        <div className="w-8 h-8 border-2 border-[#3a2e22] border-t-[#c9a254] rounded-full animate-spin mx-auto mb-4" />
-        <p className="font-cinzel text-[#5a4838] text-xs tracking-[0.3em] uppercase">Cargando...</p>
+        <div className="w-8 h-8 border-2 border-[#2c2740] border-t-[#d4a956] rounded-full animate-spin mx-auto mb-4" />
+        <p className="font-cinzel text-[#4d4568] text-xs tracking-[0.3em] uppercase">Cargando...</p>
+        {slow && (
+          <p className="font-cinzel text-[#4d4568] text-[9px] tracking-[0.2em] mt-3 uppercase opacity-60">
+            Despertando servidor...
+          </p>
+        )}
       </div>
     </div>
   );
