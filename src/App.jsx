@@ -55,6 +55,8 @@ export default function App() {
   const logout       = useStore((s) => s.logout);
 
   const [loading,     setLoading]     = useState(true);
+  const [loadError,   setLoadError]   = useState(null);
+  const [retryKey,    setRetryKey]    = useState(0);
   const [navScreen,   setNavScreen]   = useState(null);
   const [onboarding,  setOnboarding]  = useState(false);
 
@@ -69,16 +71,16 @@ export default function App() {
         ]);
         setCurrentDay(dayRes.data.data);
         setConfig(cfgRes.data.data);
-        // areas is non-critical — load in background, fall back to defaults on error
         api.get('/api/areas').then(r => setAreas(r.data.data)).catch(() => {});
       } catch (err) {
-        if (err.response?.status === 401) logout();
+        if (err.response?.status === 401) { logout(); return; }
+        setLoadError(err.message || 'Error de conexión');
       } finally {
         setLoading(false);
       }
     }
     init();
-  }, [token]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [token, retryKey]); // eslint-disable-line react-hooks/exhaustive-deps
 
   async function handleReset() {
     await api.post('/api/reset');
@@ -106,7 +108,21 @@ export default function App() {
 
   if (!token) return <Login />;
   if (onboarding) return <Onboarding onComplete={handleOnboardingComplete} />;
-  if (loading || !currentDay) return <Spinner />;
+  if (loading) return <Spinner />;
+  if (loadError || !currentDay) return (
+    <div className="min-h-screen flex items-center justify-center" style={{ background: '#09080e' }}>
+      <div className="text-center px-6">
+        <p className="font-cinzel text-[#9b1f30] text-sm mb-2 tracking-widest uppercase">Error de conexión</p>
+        <p className="text-[#4d4568] text-xs mb-6">{loadError || 'No se pudo cargar el día.'}</p>
+        <button
+          onClick={() => { setLoadError(null); setLoading(true); setRetryKey(k => k + 1); }}
+          className="font-cinzel text-[#d4a956] text-[11px] tracking-[0.2em] uppercase border border-[#d4a956]/30 px-6 py-2 rounded-lg"
+        >
+          Reintentar
+        </button>
+      </div>
+    </div>
+  );
 
   const phase = currentDay.phase;
 
