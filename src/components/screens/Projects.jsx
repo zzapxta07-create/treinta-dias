@@ -34,6 +34,8 @@ function daysUntil(dateStr) {
   return Math.ceil((new Date(dateStr) - new Date()) / 86400000);
 }
 
+const EMPTY_FORM = { name: '', area_id: 'NEGOCIO', type: 'percent', deadline: '' };
+
 export default function Projects() {
   const areas   = useAreas();
   const areaMap = useAreaMap();
@@ -41,8 +43,9 @@ export default function Projects() {
   const [loading,    setLoading]    = useState(true);
   const [filterArea, setFilterArea] = useState('ALL');
   const [showForm,   setShowForm]   = useState(false);
-  const [form,       setForm]       = useState({ name: '', area_id: 'NEGOCIO', type: 'percent', deadline: '' });
+  const [form,       setForm]       = useState(EMPTY_FORM);
   const [saving,     setSaving]     = useState(false);
+  const [error,      setError]      = useState('');
   const [progress,   setProgress]   = useState({});
 
   function load() {
@@ -62,11 +65,14 @@ export default function Projects() {
   async function handleCreate(e) {
     e.preventDefault();
     setSaving(true);
+    setError('');
     try {
       await api.post('/api/projects', form);
       setForm(EMPTY_FORM);
       setShowForm(false);
       load();
+    } catch (err) {
+      setError(err.response?.data?.error || 'Error al crear la empresa');
     } finally {
       setSaving(false);
     }
@@ -77,7 +83,7 @@ export default function Projects() {
   }
 
   async function handleProgressSave(id) {
-    await api.put(`/api/projects/${id}`, { progress: progress[id] }).catch(() => {});
+    await api.put(`/api/projects/${id}/progress`, { progress: progress[id] }).catch(() => {});
   }
 
   async function handleDelete(id) {
@@ -155,6 +161,12 @@ export default function Projects() {
             onChange={(e) => setForm((f) => ({ ...f, deadline: e.target.value }))}
             style={{ ...inputStyle, width: '100%' }}
           />
+          {error && (
+            <p className="text-sm px-3 py-2 rounded"
+              style={{ color: '#c43040', background: 'rgba(155,31,48,0.08)', border: '1px solid rgba(155,31,48,0.25)' }}>
+              {error}
+            </p>
+          )}
           <div className="flex gap-2">
             <button
               type="submit"
@@ -272,7 +284,7 @@ export default function Projects() {
                     onClick={async () => {
                       const newVal = prog === 100 ? 0 : 100;
                       setProgress((prev) => ({ ...prev, [p.id]: newVal }));
-                      await api.put(`/api/projects/${p.id}`, { progress: newVal }).catch(() => {});
+                      await api.put(`/api/projects/${p.id}/progress`, { progress: newVal }).catch(() => {});
                     }}
                     className="w-full font-cinzel text-[9px] tracking-[0.1em] uppercase py-2 rounded transition-colors"
                     style={prog === 100
