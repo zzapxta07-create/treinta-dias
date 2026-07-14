@@ -1,28 +1,28 @@
-const COLORS = {
-  NEGOCIO:   { bg: 'rgba(59,130,246,0.12)',  text: '#3B82F6',  border: 'rgba(59,130,246,0.25)'  },
-  SEGUNDA:   { bg: 'rgba(168,85,247,0.12)',  text: '#A855F7',  border: 'rgba(168,85,247,0.25)'  },
-  ESTUDIO:   { bg: 'rgba(245,158,11,0.12)',  text: '#F59E0B',  border: 'rgba(245,158,11,0.25)'  },
-  EJERCICIO: { bg: 'rgba(16,185,129,0.12)',  text: '#10B981',  border: 'rgba(16,185,129,0.25)'  },
-  OTROS:     { bg: 'rgba(107,114,128,0.10)', text: '#9a8470',  border: 'rgba(107,114,128,0.2)'  },
-};
+import { useAreaMap } from '../../hooks/useAreas';
 
-const LABELS = {
-  NEGOCIO: 'Negocio', SEGUNDA: 'Segunda', ESTUDIO: 'Estudio',
-  EJERCICIO: 'Ejercicio', OTROS: 'Otros',
-};
+function hexToRgba(hex, alpha) {
+  if (!hex || hex[0] !== '#') return `rgba(154,132,112,${alpha})`;
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  return `rgba(${r},${g},${b},${alpha})`;
+}
 
 export default function AreaBadge({ area, label }) {
-  const cfg = COLORS[area] || COLORS.OTROS;
+  const areaMap = useAreaMap();
+  const cfg = areaMap[area];
+  const color = cfg?.color || '#9a8470';
+
   return (
     <span
       className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-cinzel tracking-[0.05em]"
-      style={{ backgroundColor: cfg.bg, color: cfg.text, border: `1px solid ${cfg.border}` }}
+      style={{
+        backgroundColor: hexToRgba(color, 0.12),
+        color,
+        border: `1px solid ${hexToRgba(color, 0.25)}`,
+      }}
     >
-      {label || LABELS[area] || area}
+      {label || (cfg ? `${cfg.emoji} ${cfg.label}` : area)}
     </span>
   );
-}
-
-export function areaColor(area) {
-  return COLORS[area]?.text || '#9a8470';
 }

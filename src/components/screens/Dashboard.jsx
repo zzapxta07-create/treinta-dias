@@ -24,13 +24,23 @@ function BlockEditRow({ block, projects, onSave, onCancel }) {
   const [err,    setErr]    = useState('');
   const [saving, setSaving] = useState(false);
 
+  const [notes, setNotes] = useState(block.notes || '');
+
   async function handleSave() {
     const sm = timeToMinutes(start);
     const em = timeToMinutes(end);
     if (em <= sm) { setErr('El fin debe ser después del inicio.'); return; }
     setSaving(true);
     try {
-      await onSave(block.id, { area_id: area, start_time: start, end_time: end, start_minutes: sm, end_minutes: em });
+      await onSave(block.id, {
+        area_id: area,
+        project_id: block.project_id ?? null,
+        start_time: start,
+        end_time: end,
+        start_minutes: sm,
+        end_minutes: em,
+        notes: notes.trim() || null,
+      });
     } finally {
       setSaving(false);
     }
@@ -60,6 +70,12 @@ function BlockEditRow({ block, projects, onSave, onCancel }) {
       <select value={area} onChange={(e) => setArea(e.target.value)} style={{ ...inputStyle, marginBottom: '8px' }}>
         {areas.map((a) => <option key={a.id} value={a.id}>{a.emoji} {a.label}</option>)}
       </select>
+      <input
+        value={notes}
+        onChange={(e) => setNotes(e.target.value)}
+        placeholder="¿Qué tarea harás en este bloque?"
+        style={{ ...inputStyle, marginBottom: '8px' }}
+      />
       {err && <p className="text-[#9b1f30] text-xs mb-2">{err}</p>}
       <div className="flex gap-2">
         <button onClick={handleSave} disabled={saving}
@@ -223,7 +239,7 @@ export default function Dashboard({ setNavScreen }) {
                   <p className="font-cinzel text-[8px] font-semibold uppercase tracking-[0.2em] mb-1"
                      style={{ color: activeAreaColor }}>En curso</p>
                   <p className="text-[#f0e6d0] font-semibold text-base leading-tight truncate">
-                    {activeBlock.project_name || areaMap[areaId]?.label || '—'}
+                    {activeBlock.notes || activeBlock.project_name || areaMap[areaId]?.label || '—'}
                   </p>
                   <p className="font-mono text-[#9490aa] text-xs mt-0.5">
                     {minutesToTime(activeStart)}–{minutesToTime(activeEnd)}
@@ -291,15 +307,21 @@ export default function Dashboard({ setNavScreen }) {
               <div className="flex flex-col">
                 {upcomingBlocks.map((b) => {
                   const bc = areaMap[b.area_id || b.area]?.color || '#6B7280';
+                  const areaLabel = areaMap[b.area_id || b.area]?.label || '—';
                   return (
                     <div key={b.id} className="flex items-center gap-3 py-2.5" style={{ borderBottom: '1px solid #1e1b2e' }}>
                       <p className="font-mono text-sm text-[#f0e6d0] w-10 shrink-0">
                         {minutesToTime(b.start_minutes ?? b.startMinutes)}
                       </p>
                       <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: bc, boxShadow: `0 0 4px ${bc}80` }} />
-                      <p className="text-[#9490aa] text-sm truncate flex-1">
-                        {b.project_name || areaMap[b.area_id || b.area]?.label || '—'}
-                      </p>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-[#f0e6d0] text-sm truncate">
+                          {b.notes || b.project_name || areaLabel}
+                        </p>
+                        {(b.notes || b.project_name) && (
+                          <p className="text-[#4d4568] text-[10px] truncate">{areaLabel}</p>
+                        )}
+                      </div>
                       <p className="text-[#4d4568] text-xs shrink-0">
                         {minutesToLabel((b.end_minutes ?? b.endMinutes) - (b.start_minutes ?? b.startMinutes))}
                       </p>
@@ -339,6 +361,7 @@ export default function Dashboard({ setNavScreen }) {
                     const e = b.end_minutes   ?? b.endMinutes;
                     const bc = areaMap[b.area_id || b.area]?.color || '#6B7280';
                     const proj = projects.find((p) => p.id === b.project_id);
+                    const areaLabel = areaMap[b.area_id || b.area]?.label || b.area_id;
                     if (editingBlockId === b.id) {
                       return <BlockEditRow key={b.id} block={b} projects={projects}
                         onSave={handleBlockEdit} onCancel={() => setEditingBlockId(null)} />;
@@ -348,9 +371,14 @@ export default function Dashboard({ setNavScreen }) {
                         style={{ borderBottom: '1px solid #1e1b2e' }}>
                         <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: bc }} />
                         <p className="font-mono text-xs text-[#f0e6d0] shrink-0">{minutesToTime(s)}–{minutesToTime(e)}</p>
-                        <p className="text-[#9490aa] text-sm truncate flex-1">
-                          {proj?.name || areaMap[b.area_id || b.area]?.label || b.area_id}
-                        </p>
+                        <div className="min-w-0 flex-1">
+                          <p className="text-[#9490aa] text-sm truncate">
+                            {b.notes || proj?.name || areaLabel}
+                          </p>
+                          {(b.notes || proj?.name) && (
+                            <p className="text-[#4d4568] text-[10px] truncate">{areaLabel}</p>
+                          )}
+                        </div>
                         <button onClick={() => setEditingBlockId(b.id)}
                           className="text-[#4d4568] hover:text-[#d4a956] text-sm transition-colors shrink-0 px-1">✎</button>
                       </div>

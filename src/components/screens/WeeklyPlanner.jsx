@@ -45,6 +45,7 @@ function BlockModal({ day, editBlock, areas, onClose, onReload }) {
         start_time: start, end_time: end,
         start_minutes: startM, end_minutes: endM,
         area_id: area, notes: notes.trim() || null,
+        project_id: editBlock?.project_id ?? null,
       };
       if (editBlock) {
         await api.put(`/api/blocks/${editBlock.id}`, payload);
