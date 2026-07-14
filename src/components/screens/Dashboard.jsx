@@ -108,10 +108,12 @@ export default function Dashboard({ setNavScreen }) {
   const [showBlockManager, setShowBlockManager] = useState(false);
   const [editingBlockId,   setEditingBlockId]   = useState(null);
   const [projects,         setProjects]         = useState([]);
+  const [streak,           setStreak]           = useState(0);
 
   useEffect(() => {
     api.get('/api/stats/history?days=7').then((r) => setRecentDays(r.data.data)).catch(() => {});
     api.get('/api/projects').then((r) => setProjects(r.data.data || [])).catch(() => {});
+    api.get('/api/stats/streak').then((r) => setStreak(r.data.data.streak || 0)).catch(() => {});
   }, []);
 
   if (!currentDay) return null;
@@ -208,6 +210,27 @@ export default function Dashboard({ setNavScreen }) {
             <span className="font-cinzel text-[10px] tracking-[0.08em]">Coach</span>
           </button>
         </div>
+      </div>
+
+      {/* Streak */}
+      <div className="rounded-xl p-4 mb-5 flex items-center gap-4" style={panelStyle}>
+        <div className="w-11 h-11 rounded-full flex items-center justify-center shrink-0 text-xl"
+          style={{
+            background: streak > 0 ? 'rgba(212,169,86,0.12)' : 'rgba(255,255,255,0.03)',
+            border: `1px solid ${streak > 0 ? 'rgba(212,169,86,0.35)' : '#2c2740'}`,
+          }}>
+          🔥
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="font-cinzel text-[8px] text-[#4d4568] uppercase tracking-[0.25em] mb-0.5">Racha</p>
+          <p className="font-mono text-2xl font-black leading-none"
+            style={{ color: streak > 0 ? '#d4a956' : '#4d4568' }}>
+            {streak} <span className="text-sm font-normal">{streak === 1 ? 'día' : 'días'}</span>
+          </p>
+        </div>
+        <p className="text-[#4d4568] text-[11px] text-right leading-snug max-w-[150px] hidden sm:block">
+          Ritual del alba + bloques programados
+        </p>
       </div>
 
       {/* Daily phrase */}
