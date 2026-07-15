@@ -4,10 +4,12 @@ import Timer from '../ui/Timer';
 import api from '../../api/index.js';
 import { HelmetFilled, DiamondOrnament, OrnamentalDivider } from '../ui/Ornaments';
 
+const MIN_WORDS = 300;
+
 function validateEssay(text) {
   const words = text.trim().split(/\s+/).filter(w => w.length > 1);
-  if (words.length < 500) {
-    return `Mínimo 500 palabras. Llevas ${words.length}.`;
+  if (words.length < MIN_WORDS) {
+    return `Mínimo ${MIN_WORDS} palabras. Llevas ${words.length}.`;
   }
   const unique = new Set(words.map(w => w.toLowerCase().replace(/[^a-záéíóúñü]/gi, '')));
   if (unique.size < words.length * 0.25) {
@@ -38,7 +40,7 @@ export default function MorningRitual() {
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const words = essay.trim().split(/\s+/).filter(w => w.length > 1).length;
-  const isValid = words >= 500 && phrase.trim().length >= 3;
+  const isValid = words >= MIN_WORDS && phrase.trim().length >= 3;
 
   async function handleExpire() {
     if (submitted) return;
@@ -157,13 +159,13 @@ export default function MorningRitual() {
             <p className="font-cinzel text-[8px] text-[#4d4568] tracking-[0.3em] uppercase">
               Ensayo Matutino
             </p>
-            <span className={`font-mono text-xs font-bold ${words >= 500 ? 'text-[#d4a956]' : 'text-[#9b1f30]'}`}
-              style={words >= 500 ? { textShadow: '0 0 10px rgba(212,169,86,0.3)' } : {}}>
-              {words} / 500
+            <span className={`font-mono text-xs font-bold ${words >= MIN_WORDS ? 'text-[#d4a956]' : 'text-[#9b1f30]'}`}
+              style={words >= MIN_WORDS ? { textShadow: '0 0 10px rgba(212,169,86,0.3)' } : {}}>
+              {words} / {MIN_WORDS}
             </span>
           </div>
           <p className="text-[#4d4568] text-sm mb-3 leading-relaxed">
-            Escribe sobre tus objetivos del día, reflexiones, lo que vas a lograr hoy. Mínimo 500 palabras.
+            Escribe sobre tus objetivos del día, reflexiones, lo que vas a lograr hoy. Mínimo {MIN_WORDS} palabras.
           </p>
           <textarea
             value={essay}
@@ -191,11 +193,11 @@ export default function MorningRitual() {
             <div
               className="h-full rounded-full transition-all duration-500"
               style={{
-                width: `${Math.min(100, (words / 500) * 100)}%`,
-                background: words >= 500
+                width: `${Math.min(100, (words / MIN_WORDS) * 100)}%`,
+                background: words >= MIN_WORDS
                   ? 'linear-gradient(90deg, #c49040, #d4a956)'
                   : 'linear-gradient(90deg, #9b1f30, #c43040)',
-                boxShadow: words >= 500 ? '0 0 8px rgba(212,169,86,0.3)' : 'none',
+                boxShadow: words >= MIN_WORDS ? '0 0 8px rgba(212,169,86,0.3)' : 'none',
               }}
             />
           </div>
