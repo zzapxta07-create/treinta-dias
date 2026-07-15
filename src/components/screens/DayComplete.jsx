@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useStore } from '../../store/useStore';
 import { calcDayScore } from '../../utils/scoring';
+import { useAreaMap } from '../../hooks/useAreas';
 import AiChat from '../ui/AiChat';
 import api from '../../api/index.js';
 import { HelmetFilled, GreatHelm, DiamondOrnament } from '../ui/Ornaments';
@@ -8,7 +9,8 @@ import { HelmetFilled, GreatHelm, DiamondOrnament } from '../ui/Ornaments';
 export default function DayComplete() {
   const currentDay    = useStore((s) => s.currentDay);
   const setCurrentDay = useStore((s) => s.setCurrentDay);
-  const score         = currentDay ? (currentDay.score || calcDayScore(currentDay)) : 0;
+  const areaMap       = useAreaMap();
+  const score         = currentDay ? (currentDay.score || calcDayScore(currentDay, areaMap)) : 0;
   const dateLabel     = currentDay?.date_key?.toString().slice(0, 10);
   const [starting,    setStarting] = useState(false);
 

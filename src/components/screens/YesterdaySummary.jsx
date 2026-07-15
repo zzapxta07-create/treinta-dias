@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useStore } from '../../store/useStore';
 import { areaMinutesFromBlocks } from '../../utils/scoring';
 import { minutesToLabel, addDays } from '../../utils/dateUtils';
-import { AREAS } from '../../data/areas';
+import { useAreas } from '../../hooks/useAreas';
 import api from '../../api/index.js';
 import { DiamondOrnament } from '../ui/Ornaments';
 
@@ -16,6 +16,7 @@ const panelStyle = {
 export default function YesterdaySummary() {
   const currentDay    = useStore((s) => s.currentDay);
   const setCurrentDay = useStore((s) => s.setCurrentDay);
+  const areas         = useAreas();
   const [yesterday,   setYesterday]  = useState(null);
   const [loading,     setLoading]    = useState(true);
   const [confirming,  setConfirming] = useState(false);
@@ -97,15 +98,14 @@ export default function YesterdaySummary() {
             Mínimos Diarios
           </p>
           <div className="grid grid-cols-2 gap-3">
-            {[
-              { label: 'Negocio',   min: '5h',    color: 'text-blue-400' },
-              { label: 'Estudio',   min: '3h',    color: 'text-amber-400' },
-              { label: 'Segunda',   min: '1h',    color: 'text-purple-400' },
-              { label: 'Ejercicio', min: '30min', color: 'text-emerald-400' },
-            ].map((item) => (
-              <div key={item.label} className="rounded-lg p-3" style={panelStyle}>
-                <p className={`font-mono text-lg font-black ${item.color}`}>{item.min}</p>
-                <p className="font-cinzel text-[#4d4568] text-[9px] mt-0.5 tracking-widest uppercase">{item.label}</p>
+            {areas.filter(a => a.min_minutes > 0).map((area) => (
+              <div key={area.id} className="rounded-lg p-3" style={panelStyle}>
+                <p className="font-mono text-lg font-black" style={{ color: area.color }}>
+                  {minutesToLabel(area.min_minutes)}
+                </p>
+                <p className="font-cinzel text-[#4d4568] text-[9px] mt-0.5 tracking-widest uppercase">
+                  {area.label.split(' ')[0]}
+                </p>
               </div>
             ))}
           </div>
@@ -173,11 +173,11 @@ export default function YesterdaySummary() {
           Horas por Área
         </p>
         <div className="flex flex-col gap-2">
-          {Object.entries(AREAS).filter(([id]) => id !== 'OTROS').map(([id, area]) => {
-            const mins = areaMins[id] || 0;
-            const ok   = mins >= area.minMinutes;
+          {areas.filter(a => a.id !== 'OTROS').map((area) => {
+            const mins = areaMins[area.id] || 0;
+            const ok   = mins >= area.min_minutes;
             return (
-              <div key={id} className="flex justify-between items-center text-sm">
+              <div key={area.id} className="flex justify-between items-center text-sm">
                 <span style={{ color: ok ? '#d4a956' : '#4d4568' }}>{area.label}</span>
                 <span className="font-mono" style={{ color: ok ? '#d4a956' : '#9490aa' }}>
                   {minutesToLabel(mins)}

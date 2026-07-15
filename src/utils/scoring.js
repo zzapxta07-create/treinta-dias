@@ -26,19 +26,30 @@ export function areaMinutesFromBlocks(blocks, evidences = []) {
   return result;
 }
 
-export function calcDayScore(day) {
+const DEFAULT_MIN_MINUTES = { NEGOCIO: 300, SEGUNDA: 60, ESTUDIO: 180, EJERCICIO: 30 };
+
+// areaMap: optional { id: { min_minutes } } from useAreaMap() — respects the
+// user's customized minimums (Config screen) instead of the hardcoded defaults.
+export function calcDayScore(day, areaMap) {
   if (!day || day.status === 'lost') return 0;
   let score = 0;
 
   if (day.entered_on_time ?? day.enteredOnTime)  score += SCORE_TABLE.entryOnTime;
   if (day.ritual_complete ?? day.showerComplete)  score += SCORE_TABLE.ritualComplete;
 
+  const minMinutes = {
+    NEGOCIO:   areaMap?.NEGOCIO?.min_minutes   ?? DEFAULT_MIN_MINUTES.NEGOCIO,
+    SEGUNDA:   areaMap?.SEGUNDA?.min_minutes   ?? DEFAULT_MIN_MINUTES.SEGUNDA,
+    ESTUDIO:   areaMap?.ESTUDIO?.min_minutes   ?? DEFAULT_MIN_MINUTES.ESTUDIO,
+    EJERCICIO: areaMap?.EJERCICIO?.min_minutes ?? DEFAULT_MIN_MINUTES.EJERCICIO,
+  };
+
   const evidences = day.evidences || [];
   const mins = areaMinutesFromBlocks(day.blocks || [], evidences);
-  if (mins.NEGOCIO   >= 300) score += SCORE_TABLE.minNegocio;
-  if (mins.SEGUNDA   >=  60) score += SCORE_TABLE.minSegunda;
-  if (mins.ESTUDIO   >= 180) score += SCORE_TABLE.minEstudio;
-  if (mins.EJERCICIO >=  30) score += SCORE_TABLE.minEjercicio;
+  if (mins.NEGOCIO   >= minMinutes.NEGOCIO)   score += SCORE_TABLE.minNegocio;
+  if (mins.SEGUNDA   >= minMinutes.SEGUNDA)   score += SCORE_TABLE.minSegunda;
+  if (mins.ESTUDIO   >= minMinutes.ESTUDIO)   score += SCORE_TABLE.minEstudio;
+  if (mins.EJERCICIO >= minMinutes.EJERCICIO) score += SCORE_TABLE.minEjercicio;
 
   if (day.all_evidences_complete ?? day.allEvidencesComplete) score += SCORE_TABLE.allEvidences;
   if (day.close_complete         ?? day.closeComplete)        score += SCORE_TABLE.dayClose;

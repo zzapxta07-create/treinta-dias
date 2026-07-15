@@ -118,7 +118,7 @@ export default function Dashboard({ setNavScreen }) {
 
   if (!currentDay) return null;
 
-  const score    = calcDayScore(currentDay);
+  const score    = calcDayScore(currentDay, areaMap);
   const areaMins = areaMinutesFromBlocks(currentDay.blocks || [], currentDay.evidences || []);
 
   const activeBlockHasEvidence = activeBlock &&

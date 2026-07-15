@@ -3,7 +3,7 @@ import {
   BarChart, Bar, LineChart, Line, AreaChart, Area,
   XAxis, YAxis, Tooltip, ResponsiveContainer, Cell,
 } from 'recharts';
-import { AREAS } from '../../data/areas';
+import { useAreaMap } from '../../hooks/useAreas';
 import api from '../../api/index.js';
 import { DiamondOrnament } from '../ui/Ornaments';
 
@@ -26,12 +26,8 @@ function scoreColor(s) {
   return '#9b1f30';
 }
 
-const AREA_COLORS = {
-  NEGOCIO:   '#60a5fa',
-  SEGUNDA:   '#a78bfa',
-  ESTUDIO:   '#fbbf24',
-  EJERCICIO: '#34d399',
-};
+// Fixed set of area IDs tracked in the stacked hours chart (structural, not display names)
+const CHART_AREA_IDS = ['NEGOCIO', 'SEGUNDA', 'ESTUDIO', 'EJERCICIO'];
 
 function CustomTooltip({ active, payload, label }) {
   if (!active || !payload?.length) return null;
@@ -45,12 +41,9 @@ function CustomTooltip({ active, payload, label }) {
   );
 }
 
-function BlockDetail({ block, evidence }) {
+function BlockDetail({ block, evidence, areaMap }) {
   const [imgOpen, setImgOpen] = useState(false);
-  const areaColorClass = {
-    NEGOCIO: 'border-blue-500', SEGUNDA: 'border-purple-500',
-    ESTUDIO: 'border-yellow-500', EJERCICIO: 'border-green-500', OTROS: 'border-[#2c2740]',
-  }[block.area_id] || 'border-[#2c2740]';
+  const areaColor = areaMap[block.area_id]?.color || '#2c2740';
 
   const dur = block.end_minutes - block.start_minutes;
   const durLabel = dur >= 60
@@ -59,12 +52,12 @@ function BlockDetail({ block, evidence }) {
   const t = (m) => `${Math.floor(m/60)}:${String(m%60).padStart(2,'0')}`;
 
   return (
-    <div className={`rounded border-l-4 ${areaColorClass} p-3 mb-2`}
-      style={{ background: '#09080e', border: '1px solid #2c2740', borderLeftWidth: 4 }}>
+    <div className="rounded p-3 mb-2"
+      style={{ background: '#09080e', border: '1px solid #2c2740', borderLeft: `4px solid ${areaColor}` }}>
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
           <p className="text-[#f0e6d0] text-sm truncate">
-            {block.project_name || AREAS[block.area_id]?.label || block.area_id}
+            {block.notes || block.project_name || areaMap[block.area_id]?.label || block.area_id}
           </p>
           <p className="font-mono text-[#4d4568] text-xs">{t(block.start_minutes)}–{t(block.end_minutes)} · {durLabel}</p>
         </div>
@@ -114,7 +107,7 @@ function BlockDetail({ block, evidence }) {
   );
 }
 
-function DayDetail({ dateKey, onClose }) {
+function DayDetail({ dateKey, onClose, areaMap }) {
   const [day,     setDay]     = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -184,7 +177,7 @@ function DayDetail({ dateKey, onClose }) {
                 .sort((a, b) => a.start_minutes - b.start_minutes)
                 .map(block => {
                   const evidence = (day.evidences || []).find(e => e.block_id === block.id);
-                  return <BlockDetail key={block.id} block={block} evidence={evidence} />;
+                  return <BlockDetail key={block.id} block={block} evidence={evidence} areaMap={areaMap} />;
                 })}
 
               {day.close_summary && (
@@ -206,6 +199,7 @@ function DayDetail({ dateKey, onClose }) {
 }
 
 export default function History() {
+  const areaMap = useAreaMap();
   const [days,      setDays]      = useState([]);
   const [range,     setRange]     = useState(30);
   const [loading,   setLoading]   = useState(true);
@@ -226,7 +220,7 @@ export default function History() {
     .map((d) => ({ date: d.date_key.slice(5), value: d.emotional_state }));
   const areaData = days.map((d) => {
     const row = { date: d.date_key.slice(5) };
-    Object.keys(AREA_COLORS).forEach((a) => {
+    CHART_AREA_IDS.forEach((a) => {
       row[a] = Math.round((d.area_minutes?.[a] || 0) / 60 * 10) / 10;
     });
     return row;
@@ -307,17 +301,18 @@ export default function History() {
                   <XAxis dataKey="date" tick={{ fill: '#4d4568', fontSize: 10 }} axisLine={false} tickLine={false} interval="preserveStartEnd" />
                   <YAxis tick={{ fill: '#4d4568', fontSize: 10 }} axisLine={false} tickLine={false} />
                   <Tooltip content={<CustomTooltip />} />
-                  {Object.entries(AREA_COLORS).map(([a, color]) => (
+                  {CHART_AREA_IDS.map((a) => (
                     <Area key={a} type="monotone" dataKey={a} stackId="1"
-                      stroke={color} fill={color} fillOpacity={0.35} name={AREAS[a]?.label || a} />
+                      stroke={areaMap[a]?.color || '#9490aa'} fill={areaMap[a]?.color || '#9490aa'}
+                      fillOpacity={0.35} name={areaMap[a]?.label || a} />
                   ))}
                 </AreaChart>
               </ResponsiveContainer>
               <div className="flex flex-wrap gap-3 mt-3">
-                {Object.entries(AREA_COLORS).map(([a, color]) => (
+                {CHART_AREA_IDS.map((a) => (
                   <div key={a} className="flex items-center gap-1.5">
-                    <div className="w-2 h-2 rounded-full" style={{ backgroundColor: color }} />
-                    <span className="font-cinzel text-[8px] text-[#4d4568] uppercase tracking-widest">{AREAS[a]?.label || a}</span>
+                    <div className="w-2 h-2 rounded-full" style={{ backgroundColor: areaMap[a]?.color || '#9490aa' }} />
+                    <span className="font-cinzel text-[8px] text-[#4d4568] uppercase tracking-widest">{areaMap[a]?.label || a}</span>
                   </div>
                 ))}
               </div>
@@ -370,7 +365,7 @@ export default function History() {
         </>
       )}
 
-      {detailKey && <DayDetail dateKey={detailKey} onClose={() => setDetailKey(null)} />}
+      {detailKey && <DayDetail dateKey={detailKey} onClose={() => setDetailKey(null)} areaMap={areaMap} />}
     </div>
   );
 }

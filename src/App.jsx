@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { useStore } from './store/useStore';
 import api from './api/index.js';
 
@@ -14,6 +14,7 @@ import MorningRitual from './components/screens/MorningRitual';
 import Dashboard     from './components/screens/Dashboard';
 import DayClose      from './components/screens/DayClose';
 import DayComplete   from './components/screens/DayComplete';
+import UpsPrompt     from './components/screens/UpsPrompt';
 
 import History       from './components/screens/History';
 import Projects      from './components/screens/Projects';
@@ -153,12 +154,13 @@ export default function App() {
     );
   }
 
-  const FULLSCREEN = ['ritual', 'day_lost', 'day_complete'];
+  const FULLSCREEN = ['ritual', 'day_lost', 'day_complete', 'ups_prompt'];
   if (FULLSCREEN.includes(phase)) {
     const SCREENS = {
       day_lost:     <DayLost />,
       ritual:       <MorningRitual />,
       day_complete: <DayComplete />,
+      ups_prompt:   <UpsPrompt />,
     };
     return SCREENS[phase] || <Spinner />;
   }

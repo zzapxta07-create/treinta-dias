@@ -1,13 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useStore } from '../../store/useStore';
-import { AREAS } from '../../data/areas';
+import { useAreaMap } from '../../hooks/useAreas';
 import PhotoUpload from './PhotoUpload';
 import api from '../../api/index.js';
-
-const AREA_HEX = {
-  NEGOCIO: '#3B82F6', SEGUNDA: '#A855F7', ESTUDIO: '#F59E0B',
-  EJERCICIO: '#10B981', OTROS: '#9490aa',
-};
 
 function useNowMinutes() {
   const [mins, setMins] = useState(() => {
@@ -49,6 +44,7 @@ const inputStyle = {
 
 // ── Evidence form ─────────────────────────────────────────────────────────────
 export function EvidenceForm({ block, onSubmit, onCancel }) {
+  const areaMap = useAreaMap();
   const [q1,         setQ1]         = useState('');
   const [focusLevel, setFocusLevel] = useState(7);
   const [photo,      setPhoto]      = useState(null);
@@ -56,7 +52,7 @@ export function EvidenceForm({ block, onSubmit, onCancel }) {
   const [reason,     setReason]     = useState('');
   const [saving,     setSaving]     = useState(false);
 
-  const areaColor = AREA_HEX[block.area_id] || '#9490aa';
+  const areaColor = areaMap[block.area_id]?.color || '#9490aa';
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -90,7 +86,7 @@ export function EvidenceForm({ block, onSubmit, onCancel }) {
       <div className="flex items-center justify-between mb-4">
         <div>
           <p className="text-[#f0e6d0] font-bold text-sm">
-            {block.project_name || AREAS[block.area_id]?.label}
+            {block.notes || block.project_name || areaMap[block.area_id]?.label}
           </p>
           <p className="font-mono text-[#9490aa] text-xs mt-0.5">
             {minutesToTime(block.start_minutes)}–{minutesToTime(block.end_minutes)}
@@ -190,6 +186,7 @@ export function NotificationBadge() {
 export default function EvidenceInline() {
   const currentDay    = useStore((s) => s.currentDay);
   const setCurrentDay = useStore((s) => s.setCurrentDay);
+  const areaMap       = useAreaMap();
   const nowMins       = useNowMinutes();
   const [openBlockId, setOpenBlockId] = useState(null);
   const [collapsed,   setCollapsed]   = useState(false);
@@ -264,7 +261,7 @@ export default function EvidenceInline() {
           {pending.map(b => {
             const s       = b.start_minutes ?? b.startMinutes;
             const e       = b.end_minutes   ?? b.endMinutes;
-            const color   = AREA_HEX[b.area_id] || '#9490aa';
+            const color   = areaMap[b.area_id]?.color || '#9490aa';
             const elapsed = nowMins - e;
             const elapsedLabel = elapsed < 60
               ? `hace ${elapsed}min`
@@ -279,7 +276,7 @@ export default function EvidenceInline() {
 
                     <div className="flex-1 min-w-0">
                       <p className="text-[#f0e6d0] text-sm truncate">
-                        {b.project_name || AREAS[b.area_id]?.label}
+                        {b.notes || b.project_name || areaMap[b.area_id]?.label}
                       </p>
                       <div className="flex items-center gap-2 mt-0.5 flex-wrap">
                         <span className="font-mono text-[#9490aa] text-xs">
