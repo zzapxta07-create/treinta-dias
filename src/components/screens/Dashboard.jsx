@@ -93,6 +93,106 @@ function BlockEditRow({ block, projects, onSave, onCancel }) {
   );
 }
 
+// ── Inline new-block form ─────────────────────────────────────────────────────
+function AddBlockRow({ existingBlocks, projects, onSave, onCancel }) {
+  const areas = useAreas();
+  const [start,     setStart]     = useState('');
+  const [end,       setEnd]       = useState('');
+  const [area,      setArea]      = useState(areas[0]?.id || 'NEGOCIO');
+  const [projectId, setProjectId] = useState('');
+  const [notes,     setNotes]     = useState('');
+  const [err,       setErr]       = useState('');
+  const [saving,    setSaving]    = useState(false);
+
+  const areaProjects = projects.filter((p) => p.area_id === area && !p.archived);
+
+  async function handleSave() {
+    if (!start || !end) { setErr('Completa hora de inicio y fin.'); return; }
+    const sm = timeToMinutes(start);
+    const em = timeToMinutes(end);
+    if (em <= sm) { setErr('El fin debe ser después del inicio.'); return; }
+    const overlap = existingBlocks.find((b) => {
+      const s = b.start_minutes ?? b.startMinutes;
+      const e = b.end_minutes   ?? b.endMinutes;
+      return !(em <= s || sm >= e);
+    });
+    if (overlap) {
+      setErr(`Solapamiento con ${minutesToTime(overlap.start_minutes ?? overlap.startMinutes)}–${minutesToTime(overlap.end_minutes ?? overlap.endMinutes)}.`);
+      return;
+    }
+    setSaving(true);
+    setErr('');
+    try {
+      await onSave({
+        area_id:       area,
+        project_id:    projectId ? parseInt(projectId) : null,
+        start_time:    start,
+        end_time:      end,
+        start_minutes: sm,
+        end_minutes:   em,
+        notes:         notes.trim() || null,
+      });
+      setStart(''); setEnd(''); setNotes(''); setProjectId('');
+    } catch (e) {
+      setErr(e.response?.data?.error || 'Error al guardar bloque');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  const inputStyle = {
+    width: '100%',
+    background: '#0c0a14',
+    color: '#f0e6d0',
+    fontSize: '14px',
+    borderRadius: '8px',
+    padding: '8px 12px',
+    border: '1px solid #2c2740',
+    outline: 'none',
+  };
+
+  return (
+    <div className="rounded-xl p-3 mb-2" style={{ background: '#1e1b2e', border: '1px solid #2c2740' }}>
+      <div className="flex gap-2 mb-2">
+        {[['Inicio', start, setStart], ['Fin', end, setEnd]].map(([lbl, val, setter]) => (
+          <div key={lbl} className="flex-1">
+            <p className="font-cinzel text-[7px] text-[#4d4568] tracking-[0.15em] mb-1 uppercase">{lbl}</p>
+            <input type="time" value={val} onChange={(e) => setter(e.target.value)} style={inputStyle} />
+          </div>
+        ))}
+      </div>
+      <select value={area} onChange={(e) => { setArea(e.target.value); setProjectId(''); }} style={{ ...inputStyle, marginBottom: '8px' }}>
+        {areas.map((a) => <option key={a.id} value={a.id}>{a.emoji} {a.label}</option>)}
+      </select>
+      {area !== 'OTROS' && areaProjects.length > 0 && (
+        <select value={projectId} onChange={(e) => setProjectId(e.target.value)} style={{ ...inputStyle, marginBottom: '8px' }}>
+          <option value="">Sin empresa</option>
+          {areaProjects.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+        </select>
+      )}
+      <input
+        value={notes}
+        onChange={(e) => setNotes(e.target.value)}
+        placeholder="¿Qué tarea harás en este bloque?"
+        style={{ ...inputStyle, marginBottom: '8px' }}
+      />
+      {err && <p className="text-[#9b1f30] text-xs mb-2">{err}</p>}
+      <div className="flex gap-2">
+        <button onClick={handleSave} disabled={saving}
+          className="flex-1 font-cinzel font-bold text-xs py-2 rounded-lg disabled:opacity-50 transition-all btn-primary"
+          style={{ fontSize: '10px', letterSpacing: '0.1em', padding: '8px 12px' }}>
+          {saving ? '...' : 'AGREGAR'}
+        </button>
+        <button onClick={onCancel}
+          className="px-4 text-[#9490aa] text-sm rounded-lg transition-colors"
+          style={{ background: '#171428', border: '1px solid #2c2740' }}>
+          Cancelar
+        </button>
+      </div>
+    </div>
+  );
+}
+
 // ── Main ─────────────────────────────────────────────────────────────────────
 export default function Dashboard({ setNavScreen }) {
   const now           = useCurrentTime();
@@ -107,6 +207,7 @@ export default function Dashboard({ setNavScreen }) {
   const [chatOpen,         setChatOpen]         = useState(false);
   const [showBlockManager, setShowBlockManager] = useState(false);
   const [editingBlockId,   setEditingBlockId]   = useState(null);
+  const [addingBlock,      setAddingBlock]      = useState(false);
   const [projects,         setProjects]         = useState([]);
   const [streak,           setStreak]           = useState(0);
 
@@ -135,6 +236,17 @@ export default function Dashboard({ setNavScreen }) {
     const { data } = await api.put(`/api/blocks/${blockId}`, updatedData);
     setCurrentDay(data.data.day);
     setEditingBlockId(null);
+  }
+
+  async function handleBlockAdd(payload) {
+    const { data } = await api.post('/api/blocks', {
+      ...payload,
+      day_id: currentDay.id,
+      sort_order: (currentDay.blocks || []).length,
+    });
+    const updated = [...(currentDay.blocks || []), data.data];
+    setCurrentDay({ ...currentDay, blocks: updated });
+    setAddingBlock(false);
   }
 
   const currentMins    = now.getHours() * 60 + now.getMinutes();
@@ -407,6 +519,23 @@ export default function Dashboard({ setNavScreen }) {
                       </div>
                     );
                   })}
+
+                  {addingBlock ? (
+                    <AddBlockRow
+                      existingBlocks={allBlocks}
+                      projects={projects}
+                      onSave={handleBlockAdd}
+                      onCancel={() => setAddingBlock(false)}
+                    />
+                  ) : (
+                    <button onClick={() => setAddingBlock(true)}
+                      className="w-full mt-1 py-2.5 rounded-lg font-cinzel text-[9px] tracking-[0.15em] uppercase transition-colors"
+                      style={{ border: '1px dashed #2c2740', color: '#4d4568', background: 'transparent' }}
+                      onMouseOver={e => { e.currentTarget.style.borderColor = 'rgba(212,169,86,0.4)'; e.currentTarget.style.color = '#d4a956'; }}
+                      onMouseOut={e => { e.currentTarget.style.borderColor = '#2c2740'; e.currentTarget.style.color = '#4d4568'; }}>
+                      + Agregar bloque
+                    </button>
+                  )}
                 </div>
               )}
             </div>
