@@ -77,6 +77,7 @@ export default function Notes() {
   }
 
   async function handleDelete(id) {
+    if (!confirm('¿Eliminar esta nota?')) return;
     try {
       await api.delete(`/api/notes/${id}`);
       setNotes(prev => prev.filter(n => n.id !== id));

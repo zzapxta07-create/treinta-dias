@@ -122,6 +122,7 @@ export default function DayPlanner() {
   }
 
   async function removeBlock(blockId) {
+    if (!confirm('¿Eliminar este bloque?')) return;
     try {
       await api.delete(`/api/blocks/${blockId}`);
       const updated = blocks.filter((b) => b.id !== blockId);

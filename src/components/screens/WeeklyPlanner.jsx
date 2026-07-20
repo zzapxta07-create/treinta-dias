@@ -322,6 +322,7 @@ export default function WeeklyPlanner() {
   })();
 
   async function handleDelete(blockId) {
+    if (!confirm('¿Eliminar este bloque?')) return;
     await api.delete(`/api/blocks/${blockId}`).catch(() => {});
     loadWeek();
   }

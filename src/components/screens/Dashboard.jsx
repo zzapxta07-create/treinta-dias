@@ -272,6 +272,7 @@ export default function Dashboard({ setNavScreen }) {
   const editCount = currentDay.block_edits_count || 0;
 
   async function handleCloseDay() {
+    if (!confirm('¿Cerrar el día? No podrás volver a este tablero hoy.')) return;
     const { data } = await api.put(`/api/days/${currentDay.date_key}/phase`, { phase: 'close' });
     setCurrentDay(data.data);
   }

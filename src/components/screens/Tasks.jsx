@@ -69,6 +69,7 @@ export default function Tasks() {
   }
 
   async function handleDelete(id) {
+    if (!confirm('¿Eliminar esta tarea?')) return;
     try {
       await api.delete(`/api/tasks/${id}`);
       setTasks(prev => prev.filter(t => t.id !== id));

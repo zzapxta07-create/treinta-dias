@@ -121,6 +121,82 @@ function AreaCard({ area, onUpdate }) {
   );
 }
 
+function PasswordSection() {
+  const [current,  setCurrent]  = useState('');
+  const [next,     setNext]     = useState('');
+  const [confirm,  setConfirm]  = useState('');
+  const [saving,   setSaving]   = useState(false);
+  const [saved,    setSaved]    = useState(false);
+  const [error,    setError]    = useState('');
+
+  async function handleSave() {
+    setError('');
+    if (!current || !next) { setError('Completa ambos campos.'); return; }
+    if (next.length < 6) { setError('La contraseña nueva debe tener mínimo 6 caracteres.'); return; }
+    if (next !== confirm) { setError('La confirmación no coincide.'); return; }
+    setSaving(true);
+    try {
+      await api.put('/api/auth/password', { current_password: current, new_password: next });
+      setCurrent(''); setNext(''); setConfirm('');
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2500);
+    } catch (err) {
+      setError(err.response?.data?.error || 'Error al cambiar la contraseña');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div className="mt-10 pt-8" style={{ borderTop: '1px solid #2c2740' }}>
+      <h2 className="font-cinzel text-lg font-bold mb-1" style={{ color: '#f0e6d0' }}>Contraseña</h2>
+      <p className="text-sm mb-4" style={{ color: '#9490aa' }}>Cambia la contraseña de tu cuenta</p>
+
+      <div className="flex flex-col gap-3 mb-4">
+        <input
+          type="password"
+          value={current}
+          onChange={e => { setCurrent(e.target.value); setSaved(false); }}
+          placeholder="Contraseña actual"
+          autoComplete="current-password"
+          style={inputStyle}
+        />
+        <input
+          type="password"
+          value={next}
+          onChange={e => { setNext(e.target.value); setSaved(false); }}
+          placeholder="Contraseña nueva (mín. 6 caracteres)"
+          autoComplete="new-password"
+          style={inputStyle}
+        />
+        <input
+          type="password"
+          value={confirm}
+          onChange={e => { setConfirm(e.target.value); setSaved(false); }}
+          placeholder="Confirmar contraseña nueva"
+          autoComplete="new-password"
+          style={inputStyle}
+        />
+      </div>
+
+      {error && <p className="text-sm mb-4" style={{ color: '#9b1f30' }}>{error}</p>}
+
+      <button
+        onClick={handleSave}
+        disabled={saving || !current || !next}
+        className="w-full py-3 rounded-xl font-cinzel text-[12px] tracking-[0.15em] uppercase font-bold transition-all disabled:opacity-40"
+        style={{
+          background: saved ? 'rgba(16,185,129,0.15)' : 'linear-gradient(135deg, rgba(212,169,86,0.15) 0%, rgba(212,169,86,0.05) 100%)',
+          border: saved ? '1px solid rgba(16,185,129,0.4)' : '1px solid rgba(212,169,86,0.3)',
+          color: saved ? '#10B981' : '#d4a956',
+        }}
+      >
+        {saving ? 'Guardando...' : saved ? '✓ Contraseña actualizada' : 'Cambiar contraseña'}
+      </button>
+    </div>
+  );
+}
+
 export default function Config() {
   const setAreas  = useStore(s => s.setAreas);
   const rawAreas  = useAreas();
@@ -199,6 +275,8 @@ export default function Config() {
       >
         {saving ? 'Guardando...' : saved ? '✓ Guardado' : 'Guardar cambios'}
       </button>
+
+      <PasswordSection />
     </div>
   );
 }
