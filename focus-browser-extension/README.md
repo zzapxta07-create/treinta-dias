@@ -8,6 +8,7 @@ A Chrome extension that replaces the new tab page with a friction-first terminal
 - **Intention gate** — 50-word minimum essay before any site opens (paste disabled)
 - **10-second loading screen** — enforced pause with random reflection phrases
 - **Distractor blocking** — YouTube, Reddit, Twitter/X, Instagram, TikTok, Facebook, Netflix redirect to a blocked page until you go through the full flow
+- **Per-site daily time limits** — cap any site to N minutes/day (`limit youtube.com 30`); once you hit it, the site is blocked for the rest of the day, no bypass through the terminal flow
 - **Custom commands** — save your own `name → URL` shortcuts with `save-command`
 - **Focus timer** — `focus 25` starts a countdown displayed in the header
 - **History & stats** — track every navigation, distractor count, cancellations
@@ -26,6 +27,9 @@ A Chrome extension that replaces the new tab page with a friction-first terminal
 | `commands` | List all commands |
 | `history` | Show recent navigation history |
 | `stats` | Show usage statistics |
+| `limit <site> <minutes>` | Set a daily usage limit for a site (1–1440 min) |
+| `remove-limit <site>` | Remove a site's daily limit |
+| `limits` | List configured limits and today's usage |
 | `focus <minutes>` | Start a focus timer (1–120 min) |
 | `stop-focus` | Cancel the focus timer |
 | `lang es\|en` | Change interface language |

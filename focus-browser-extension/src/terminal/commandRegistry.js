@@ -27,6 +27,7 @@ export const BUILTIN_COMMANDS = new Set([
   'help', 'manual', 'clear', 'open', 'visit',
   'save-command', 'remove-command', 'commands',
   'history', 'stats', 'focus', 'stop-focus', 'lang',
+  'limit', 'remove-limit', 'limits',
 ]);
 
 export function isDistractorUrl(url) {

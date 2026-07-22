@@ -11,12 +11,14 @@
     "default_title": "Focus Browser"
   },
   "background": {
-    "service_worker": "background.js"
+    "service_worker": "background.js",
+    "type": "module"
   },
   "permissions": [
     "storage",
     "tabs",
     "alarms",
+    "idle",
     "declarativeNetRequest",
     "declarativeNetRequestWithHostAccess"
   ],

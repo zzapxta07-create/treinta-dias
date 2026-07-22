@@ -1,5 +1,7 @@
 // Focus Browser — Service Worker (MV3)
 
+import { loadLimits, matchLimit, loadTodayUsage, incrementUsage } from '../storage/usageStorage.js';
+
 const DEFAULT_DISTRACTORS = [
   'twitter.com', 'x.com',
   'instagram.com', 'tiktok.com', 'facebook.com', 'netflix.com',
@@ -14,6 +16,10 @@ const ALLOWED_DOMAINS = [
 const SEARCH_ENGINE_RE = /^(www\.)?(google\.[a-z]{2,6}(\.[a-z]{2})?|bing\.com|duckduckgo\.com|search\.yahoo\.com|ecosia\.org|brave\.com)$/;
 
 const RULE_BASE_ID = 200;
+// Per-app (per-site) daily time-limit block rules live in their own ID range
+// so rebuilding them never touches the distractor rules above.
+const LIMIT_RULE_BASE_ID = 2000;
+const LIMIT_RULE_MAX     = 1000; // headroom for up to 1000 limited domains
 // Session rules share the same ID space as dynamic rules; use a high offset
 const SESSION_RULE_OFFSET = 100000;
 
@@ -83,6 +89,93 @@ function getRuleForUrl(rules, url) {
   }
 }
 
+// ── Per-app (per-site) daily usage limits ───────────────────────────────────────
+
+function buildLimitRules(domains) {
+  return domains.map((domain, i) => ({
+    id: LIMIT_RULE_BASE_ID + i,
+    priority: 1,
+    action: {
+      type: 'redirect',
+      redirect: { extensionPath: `/newtab.html?limited=1&domain=${encodeURIComponent(domain)}` },
+    },
+    condition: {
+      urlFilter: `||${domain}`,
+      resourceTypes: ['main_frame'],
+    },
+  }));
+}
+
+// Rebuilds the block rules for domains that have hit their daily limit today.
+// Only touches the LIMIT_RULE_BASE_ID+ range so distractor rules are untouched.
+async function setupLimitRules(domains) {
+  try {
+    const existing = await chrome.declarativeNetRequest.getDynamicRules();
+    const existingLimitIds = existing
+      .map(r => r.id)
+      .filter(id => id >= LIMIT_RULE_BASE_ID && id < LIMIT_RULE_BASE_ID + LIMIT_RULE_MAX);
+    await chrome.declarativeNetRequest.updateDynamicRules({
+      removeRuleIds: existingLimitIds,
+      addRules: buildLimitRules(domains.slice(0, LIMIT_RULE_MAX)),
+    });
+  } catch (e) {
+    console.error('[FocusBrowser] Failed to set limit rules:', e);
+  }
+}
+
+// Recomputes which domains are currently over their daily limit and syncs the
+// block rules. Called after limits/usage change and on every extension wake.
+async function recomputeLimitRules() {
+  const [limits, usage] = await Promise.all([loadLimits(), loadTodayUsage()]);
+  const overLimit = Object.entries(limits)
+    .filter(([domain, minutes]) => (usage[domain] || 0) >= minutes)
+    .map(([domain]) => domain);
+  await setupLimitRules(overLimit);
+  return overLimit;
+}
+
+// ── Active-tab usage tracking ────────────────────────────────────────────────
+// MV3 service workers are ephemeral, so we use a 1-minute chrome.alarms tick
+// instead of setInterval, and re-derive "what's the active tab right now"
+// from the browser directly each tick rather than trusting cached state.
+
+const USAGE_ALARM = 'fb-usage-tick';
+
+let chromeHasFocus = true;
+chrome.windows.onFocusChanged.addListener((windowId) => {
+  chromeHasFocus = windowId !== chrome.windows.WINDOW_ID_NONE;
+});
+
+async function tickUsage() {
+  try {
+    if (!chromeHasFocus) return;
+    const idleState = await chrome.idle.queryState(60);
+    if (idleState !== 'active') return;
+
+    const win = await chrome.windows.getLastFocused({ populate: true, windowTypes: ['normal'] }).catch(() => null);
+    const activeTab = win?.tabs?.find(t => t.active);
+    if (!activeTab?.url || !activeTab.url.startsWith('http')) return;
+
+    const host = getBaseDomain(activeTab.url);
+    const limits = await loadLimits();
+    const domain = matchLimit(host, limits);
+    if (!domain) return;
+
+    const newTotal = await incrementUsage(domain, 1);
+    if (newTotal >= limits[domain]) {
+      await recomputeLimitRules();
+      // DNR only stops future navigations — kick the tab off the page now too.
+      if (getBaseDomain(activeTab.url) === domain || host === domain) {
+        chrome.tabs.update(activeTab.id, {
+          url: chrome.runtime.getURL(`newtab.html?limited=1&domain=${encodeURIComponent(domain)}`),
+        }).catch(() => {});
+      }
+    }
+  } catch (e) {
+    console.error('[FocusBrowser] tickUsage failed:', e);
+  }
+}
+
 // ── Per-tab session allow-rules ───────────────────────────────────────────────
 // Priority 100 beats DNR blocking rules (priority 1).
 // Scoped to a specific tabId so only that tab is exempted.
@@ -123,11 +216,19 @@ async function getTabAllowedDomain(tabId) {
 chrome.runtime.onInstalled.addListener(async () => {
   const data = await chrome.storage.local.get('fb_distractors');
   await setupDistractorRules(data.fb_distractors || DEFAULT_DISTRACTORS);
+  await recomputeLimitRules();
+  chrome.alarms.create(USAGE_ALARM, { periodInMinutes: 1 });
 });
 
 chrome.runtime.onStartup.addListener(async () => {
   const data = await chrome.storage.local.get('fb_distractors');
   await setupDistractorRules(data.fb_distractors || DEFAULT_DISTRACTORS);
+  await recomputeLimitRules();
+  chrome.alarms.create(USAGE_ALARM, { periodInMinutes: 1 });
+});
+
+chrome.alarms.onAlarm.addListener((alarm) => {
+  if (alarm.name === USAGE_ALARM) tickUsage();
 });
 
 // ── Message handling ─────────────────────────────────────────────────────────
@@ -143,6 +244,13 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   if (msg.type === 'UPDATE_DISTRACTORS') {
     setupDistractorRules(msg.distractors)
       .then(() => sendResponse({ ok: true }))
+      .catch(() => sendResponse({ ok: false }));
+    return true;
+  }
+
+  if (msg.type === 'UPDATE_LIMITS') {
+    recomputeLimitRules()
+      .then((overLimit) => sendResponse({ ok: true, overLimit }))
       .catch(() => sendResponse({ ok: false }));
     return true;
   }

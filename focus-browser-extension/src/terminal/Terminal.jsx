@@ -10,6 +10,7 @@ import {
 } from '../storage/commandsStorage.js';
 import { loadHistory } from '../storage/historyStorage.js';
 import { loadStats } from '../storage/statsStorage.js';
+import { loadLimits, setLimit, removeLimit, loadTodayUsage, normalizeDomain, matchLimit } from '../storage/usageStorage.js';
 
 const PROMPT = 'fb> ';
 
@@ -41,6 +42,18 @@ export default function Terminal({ onOpenUrl }) {
 
   const outputRef = useRef(null);
   const inputRef  = useRef(null);
+
+  // True if `url`'s domain already hit its daily limit today.
+  async function isOverLimit(url) {
+    try {
+      const host = new URL(url).hostname.replace(/^www\./, '');
+      const [limits, usage] = await Promise.all([loadLimits(), loadTodayUsage()]);
+      const domain = matchLimit(host, limits);
+      return domain ? (usage[domain] || 0) >= limits[domain] : false;
+    } catch {
+      return false;
+    }
+  }
 
   // Load custom commands on mount
   useEffect(() => {
@@ -110,6 +123,7 @@ export default function Terminal({ onOpenUrl }) {
         const allCmds = { ...DEFAULT_COMMANDS, ...customCmds };
         const url = allCmds[name];
         if (!url) { appendLines([err(T.terminal.commandNotFound(name))]); break; }
+        if (await isOverLimit(url)) { appendLines([err(T.limits.blockedToday)]); break; }
         onOpenUrl(url, { command: name, type: 'open', isDistractor: isDistractorUrl(url), noFriction: NO_FRICTION_COMMANDS.has(name) });
         break;
       }
@@ -119,6 +133,7 @@ export default function Terminal({ onOpenUrl }) {
         if (!rawUrl) { appendLines([err('Uso: visit <url>')]); break; }
         const url = rawUrl.startsWith('http') ? rawUrl : 'https://' + rawUrl;
         if (!isValidUrl(url)) { appendLines([err(T.terminal.invalidUrl)]); break; }
+        if (await isOverLimit(url)) { appendLines([err(T.limits.blockedToday)]); break; }
         const isDistractor = isDistractorUrl(url);
         onOpenUrl(url, { command: 'visit', type: 'visit', isDistractor });
         break;
@@ -222,6 +237,51 @@ export default function Terminal({ onOpenUrl }) {
           dim(`  ${T2.visitVsOpen.padEnd(26)} ${stats.visitCount || 0} / ${stats.openCount || 0}`),
           dim(T2.footer),
         ];
+        appendLines(lines);
+        break;
+      }
+
+      case 'limit': {
+        const [rawDomain, rawMinutes] = args;
+        const minutes = parseInt(rawMinutes);
+        if (!rawDomain || !rawMinutes || isNaN(minutes) || minutes < 1 || minutes > 1440) {
+          appendLines([err(T.limits.usage)]); break;
+        }
+        const domain = normalizeDomain(rawDomain);
+        if (!domain) { appendLines([err(T.limits.usage)]); break; }
+        await setLimit(domain, minutes);
+        chrome.runtime.sendMessage({ type: 'UPDATE_LIMITS' });
+        appendLines([info(T.limits.set(domain, minutes))]);
+        break;
+      }
+
+      case 'remove-limit': {
+        const domain = normalizeDomain(args[0]);
+        if (!domain) { appendLines([err(T.limits.usage)]); break; }
+        const existing = await loadLimits();
+        if (!(domain in existing)) { appendLines([err(T.limits.notFound(domain))]); break; }
+        await removeLimit(domain);
+        chrome.runtime.sendMessage({ type: 'UPDATE_LIMITS' });
+        appendLines([info(T.limits.removed(domain))]);
+        break;
+      }
+
+      case 'limits': {
+        const limits = await loadLimits();
+        const usage  = await loadTodayUsage();
+        const domains = Object.keys(limits);
+        if (domains.length === 0) {
+          appendLines([dim(T.limits.header), dim(T.limits.empty), dim(T.limits.footer)]);
+          break;
+        }
+        const lines = [dim(T.limits.header)];
+        for (const domain of domains) {
+          const used = usage[domain] || 0;
+          const max  = limits[domain];
+          const flag = used >= max ? T.limits.reached : '';
+          lines.push(dim(`  ${domain.padEnd(24)} ${used}/${max} min${flag}`));
+        }
+        lines.push(dim(T.limits.footer));
         appendLines(lines);
         break;
       }
