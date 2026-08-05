@@ -28,6 +28,11 @@ export function areaMinutesFromBlocks(blocks, evidences = []) {
 
 const DEFAULT_MIN_MINUTES = { NEGOCIO: 300, SEGUNDA: 60, ESTUDIO: 180, EJERCICIO: 30 };
 
+function partialCredit(mins, min, points) {
+  if (!min || min <= 0) return 0;
+  return Math.round(points * Math.min(1, mins / min));
+}
+
 // areaMap: optional { id: { min_minutes } } from useAreaMap() — respects the
 // user's customized minimums (Config screen) instead of the hardcoded defaults.
 export function calcDayScore(day, areaMap) {
@@ -46,10 +51,12 @@ export function calcDayScore(day, areaMap) {
 
   const evidences = day.evidences || [];
   const mins = areaMinutesFromBlocks(day.blocks || [], evidences);
-  if (mins.NEGOCIO   >= minMinutes.NEGOCIO)   score += SCORE_TABLE.minNegocio;
-  if (mins.SEGUNDA   >= minMinutes.SEGUNDA)   score += SCORE_TABLE.minSegunda;
-  if (mins.ESTUDIO   >= minMinutes.ESTUDIO)   score += SCORE_TABLE.minEstudio;
-  if (mins.EJERCICIO >= minMinutes.EJERCICIO) score += SCORE_TABLE.minEjercicio;
+  // Proportional credit — each evidenced minute counts immediately instead of
+  // an all-or-nothing jump only once the full daily minimum is reached.
+  score += partialCredit(mins.NEGOCIO,   minMinutes.NEGOCIO,   SCORE_TABLE.minNegocio);
+  score += partialCredit(mins.SEGUNDA,   minMinutes.SEGUNDA,   SCORE_TABLE.minSegunda);
+  score += partialCredit(mins.ESTUDIO,   minMinutes.ESTUDIO,   SCORE_TABLE.minEstudio);
+  score += partialCredit(mins.EJERCICIO, minMinutes.EJERCICIO, SCORE_TABLE.minEjercicio);
 
   if (day.all_evidences_complete ?? day.allEvidencesComplete) score += SCORE_TABLE.allEvidences;
   if (day.close_complete         ?? day.closeComplete)        score += SCORE_TABLE.dayClose;
