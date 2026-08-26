@@ -76,11 +76,13 @@ export default function App() {
 
     async function init() {
       try {
-        const [dayRes, cfgRes] = await Promise.all([
-          api.get('/api/days/today'),
-          api.get('/api/config'),
-        ]);
+        // Sequential, not Promise.all — the backend's free-tier Postgres plan
+        // has very little connection headroom, and firing 2-3 requests at
+        // once on every single load was enough on its own to occasionally
+        // exhaust it and surface as this screen's "Error de conexión".
+        const dayRes = await api.get('/api/days/today');
         setCurrentDay(dayRes.data.data);
+        const cfgRes = await api.get('/api/config');
         setConfig(cfgRes.data.data);
         api.get('/api/areas').then(r => setAreas(r.data.data)).catch(() => {});
       } catch (err) {
@@ -105,11 +107,9 @@ export default function App() {
     setOnboarding(false);
     setLoading(true);
     try {
-      const [dayRes, cfgRes] = await Promise.all([
-        api.get('/api/days/today'),
-        api.get('/api/config'),
-      ]);
+      const dayRes = await api.get('/api/days/today');
       setCurrentDay(dayRes.data.data);
+      const cfgRes = await api.get('/api/config');
       setConfig(cfgRes.data.data);
       api.get('/api/areas').then(r => setAreas(r.data.data)).catch(() => {});
     } finally {
